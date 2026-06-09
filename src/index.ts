@@ -349,8 +349,14 @@ const PAGE_CSS = `
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 * { box-sizing: border-box; }
+html {
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
 body {
   margin: 0;
+  padding: 0;
   min-height: 100vh;
 }
 main,
@@ -369,7 +375,7 @@ button {
 .page {
   min-height: 100vh;
   overflow: hidden;
-  padding-top: 40px;
+  padding-top: 0;
   background: #fff;
 }
 .shell {
@@ -761,32 +767,52 @@ button {
 }
 .timer {
   justify-self: end;
-  width: 78px;
-  height: 78px;
+  width: 84px;
+  height: 84px;
   display: grid;
   place-items: center;
   border-radius: 50%;
   background: conic-gradient(#1268ee var(--progress, 25%), #e5e9ef 0);
 }
 .timer-inner {
-  width: 62px;
-  height: 62px;
+  width: 68px;
+  height: 68px;
   display: grid;
   place-items: center;
   border-radius: 50%;
   background: #fff;
   color: #0f172a;
   font-weight: 900;
-  line-height: 1.08;
+  line-height: 1;
+}
+.timer-inner > div {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: center;
+  justify-items: center;
+  column-gap: 2px;
+  row-gap: 3px;
+  line-height: 1;
+}
+.timer-inner > div > span:first-child {
+  display: contents;
 }
 .timer-value {
-  font-size: 15px;
+  grid-column: 1 / -1;
+  color: #0b1a45;
+  font-size: 23px;
   font-weight: 900;
+  letter-spacing: -.04em;
+  line-height: .94;
 }
-.timer-inner span {
-  display: block;
-  font-size: 11px;
+.timer-inner > div > span:first-child > span,
+.timer-inner > div > span:last-child {
+  color: #4d5e78;
+  font-size: 10px;
   font-weight: 800;
+  letter-spacing: -.01em;
+  line-height: 1;
 }
 .next {
   height: 38px;
@@ -1070,7 +1096,7 @@ button {
     grid-template-columns: 1fr;
   }
   .result-main {
-    grid-template-columns: minmax(0, 1fr) 78px;
+    grid-template-columns: minmax(0, 1fr) 86px;
   }
   .nav {
     gap: 12px;
@@ -1174,6 +1200,15 @@ button {
   }
   .timer {
     justify-self: center;
+    width: 86px;
+    height: 86px;
+  }
+  .timer-inner {
+    width: 70px;
+    height: 70px;
+  }
+  .timer-value {
+    font-size: 24px;
   }
   .token {
     font-size: clamp(42px, 13vw, 52px);
