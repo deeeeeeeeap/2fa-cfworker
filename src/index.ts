@@ -56,6 +56,7 @@ const HASH_NAME: Record<TotpAlgorithm, string> = {
   SHA256: "SHA-256",
   SHA512: "SHA-512",
 };
+const GITHUB_REPOSITORY_URL = "https://github.com/deeeeeeeeap/2fa-cfworker";
 
 const BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
@@ -314,6 +315,11 @@ body {
   margin: 0;
   min-height: 100vh;
 }
+main,
+section,
+div {
+  min-width: 0;
+}
 button,
 input,
 select {
@@ -384,6 +390,11 @@ button {
 .nav a {
   color: inherit;
   text-decoration: none;
+  white-space: nowrap;
+}
+.nav a:hover,
+.nav a:focus-visible {
+  color: #1268ee;
 }
 .lang {
   display: inline-flex;
@@ -407,14 +418,22 @@ button {
 .github {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
+  padding: 6px 0;
+  border-radius: 7px;
+  line-height: 1;
 }
 .hero {
   position: relative;
-  padding: 66px 0 18px;
+  min-height: 220px;
+  padding: 66px 230px 22px;
+  overflow: hidden;
+  isolation: isolate;
   text-align: center;
 }
 .hero h1 {
+  position: relative;
+  z-index: 1;
   margin: 0;
   font-size: clamp(34px, 4.5vw, 48px);
   line-height: 1.08;
@@ -423,6 +442,8 @@ button {
   font-weight: 900;
 }
 .hero p {
+  position: relative;
+  z-index: 1;
   margin: 17px 0 0;
   color: #40516f;
   font-size: 18px;
@@ -430,19 +451,20 @@ button {
 }
 .hero-art {
   position: absolute;
+  z-index: 0;
   pointer-events: none;
   opacity: .95;
 }
 .hero-art.left {
-  left: -42px;
+  left: -28px;
   top: 55px;
-  width: 300px;
+  width: 280px;
   height: 150px;
 }
 .hero-art.right {
-  right: -30px;
+  right: -8px;
   top: 72px;
-  width: 300px;
+  width: 270px;
   height: 130px;
 }
 .dots {
@@ -569,6 +591,7 @@ button {
 }
 .input-wrap input {
   width: 100%;
+  min-width: 0;
   height: 39px;
   border: 1px solid #cdd8ea;
   border-radius: 6px;
@@ -577,6 +600,7 @@ button {
   background: #fff;
   outline: none;
   box-shadow: inset 0 1px 2px rgba(15, 23, 42, .03);
+  text-overflow: ellipsis;
 }
 .input-wrap input::placeholder {
   color: #8b9ab1;
@@ -616,15 +640,16 @@ button {
   background: linear-gradient(180deg, #f8fbff, #ffffff);
 }
 .result-main {
-  min-height: 96px;
+  min-height: 116px;
   display: grid;
-  grid-template-columns: 108px 1fr 110px;
+  grid-template-columns: 96px minmax(0, 1fr) 96px;
   align-items: center;
-  padding: 10px 14px 12px;
+  gap: 10px;
+  padding: 14px 16px;
 }
 .result-shield {
-  width: 66px;
-  height: 74px;
+  width: 62px;
+  height: 70px;
   margin-left: 8px;
   font-size: 31px;
   color: #1268ee;
@@ -634,16 +659,17 @@ button {
 .token {
   text-align: center;
   color: #1f6fe8;
-  font-size: clamp(44px, 6vw, 68px);
+  font-size: clamp(42px, 4.8vw, 64px);
   line-height: 1;
   font-weight: 900;
-  letter-spacing: .18em;
+  letter-spacing: .12em;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .timer {
   justify-self: end;
-  width: 76px;
-  height: 76px;
+  width: 78px;
+  height: 78px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -660,20 +686,28 @@ button {
   font-weight: 900;
   line-height: 1.08;
 }
+.timer-value {
+  font-size: 15px;
+  font-weight: 900;
+}
 .timer-inner span {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
 }
 .result-meta {
   display: grid;
-  grid-template-columns: 1.45fr 1.45fr .72fr .72fr .78fr;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1.45fr) minmax(0, .72fr) minmax(0, .56fr) minmax(0, .68fr);
   border-top: 1px solid #d9e3f1;
   border-bottom: 1px solid #d9e3f1;
 }
 .meta-cell {
+  display: flex;
+  min-width: 0;
   min-height: 52px;
-  padding: 10px 16px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px 14px;
   border-right: 1px solid #e1e7f0;
   color: #17233d;
 }
@@ -686,15 +720,28 @@ button {
   color: #52617a;
   font-size: 13px;
 }
+.meta-cell strong,
+.meta-cell span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .next {
   height: 38px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   color: #42516d;
   font-size: 14px;
+  line-height: 1;
+  white-space: nowrap;
 }
 .next b {
   color: #1268ee;
+  font-size: 16px;
 }
 .api-desc {
   color: #263854;
@@ -714,11 +761,15 @@ button {
 }
 .code-line {
   display: grid;
-  grid-template-columns: 28px 1fr;
+  grid-template-columns: 28px minmax(0, 1fr);
   line-height: 1.7;
 }
 .code-line span:first-child {
   color: #8ca0bb;
+}
+.code-line span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .green {
   color: #5ee874;
@@ -736,21 +787,27 @@ button {
 }
 .feature-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
   margin-top: 18px;
 }
 .feature {
-  min-height: 83px;
+  min-height: 96px;
   display: grid;
-  grid-template-columns: 54px 1fr;
-  gap: 10px;
-  align-items: center;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
   border-radius: 8px;
-  padding: 12px 15px;
+  padding: 16px 18px;
 }
 .feature-icon {
-  font-size: 42px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #edf6ff;
+  font-size: 28px;
   line-height: 1;
 }
 .feature h3 {
@@ -766,6 +823,7 @@ button {
 }
 .feature.orange .feature-icon {
   color: #f28a0a;
+  background: #fff4e5;
 }
 .warning {
   display: flex;
@@ -811,15 +869,22 @@ button {
 }
 @media (max-width: 960px) {
   .hero-art { display: none; }
+  .hero {
+    min-height: 0;
+    padding-inline: 0;
+  }
   .main-grid,
   .feature-grid {
     grid-template-columns: 1fr;
   }
   .result-main {
-    grid-template-columns: 78px 1fr 86px;
+    grid-template-columns: 72px minmax(0, 1fr) 78px;
   }
   .result-meta {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .meta-cell:nth-child(5) {
+    grid-column: 1 / -1;
   }
   .meta-cell {
     border-bottom: 1px solid #e1e7f0;
@@ -894,7 +959,7 @@ button {
   }
   .token {
     font-size: clamp(42px, 13vw, 52px);
-    letter-spacing: .12em;
+    letter-spacing: .09em;
   }
   .meta-cell {
     min-width: 0;
@@ -932,6 +997,7 @@ const els = {
   error: document.querySelector("#error"),
   generate: document.querySelector("#generate"),
   copySecret: document.querySelector("#copySecret"),
+  copyOtpauth: document.querySelector("#copyOtpauth"),
   copyOtp: document.querySelector("#copyOtp"),
   copyEndpoint: document.querySelector("#copyEndpoint"),
   copyJson: document.querySelector("#copyJson")
@@ -1103,6 +1169,7 @@ for (const el of [els.secret, els.otpauth, els.digits, els.period, els.algorithm
 
 els.generate.addEventListener("click", tick);
 els.copySecret.addEventListener("click", () => copyValue(els.secret.value, "密钥"));
+els.copyOtpauth.addEventListener("click", () => copyValue(els.otpauth.value, "otpauth:// 链接"));
 els.copyEndpoint.addEventListener("click", () => copyValue(els.endpoint.value, "接口地址"));
 els.copyJson.addEventListener("click", () => copyValue('{ "token": "' + els.jsonToken.textContent + '" }', "JSON"));
 els.copyOtp.addEventListener("click", () => {
@@ -1135,7 +1202,7 @@ function homeHtml(scriptNonce: string): string {
         <a href="#guide">使用指南</a>
         <a href="#security">安全性</a>
         <span class="lang" aria-label="语言"><button class="active" type="button">中文</button><button type="button">EN</button></span>
-        <a class="github" href="https://github.com/" rel="noreferrer">● GitHub ↗</a>
+        <a class="github" href="${GITHUB_REPOSITORY_URL}" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
       </nav>
     </div>
   </header>
@@ -1161,7 +1228,7 @@ function homeHtml(scriptNonce: string): string {
         </div>
         <div class="field">
           <label for="otpauth">otpauth:// 链接（可选）<span class="help">?</span></label>
-          <div class="input-wrap"><input id="otpauth" autocomplete="off" spellcheck="false" placeholder="otpauth://totp/Example:user@example.com?secret=FXPYSQ..."><button class="icon-button" type="button" aria-label="复制链接">▢</button></div>
+          <div class="input-wrap"><input id="otpauth" autocomplete="off" spellcheck="false" placeholder="otpauth://totp/Example:user@example.com?secret=FXPYSQ..."><button id="copyOtpauth" class="icon-button" type="button" aria-label="复制链接">▢</button></div>
         </div>
         <input id="digits" type="hidden" value="6">
         <input id="period" type="hidden" value="30">
@@ -1171,7 +1238,7 @@ function homeHtml(scriptNonce: string): string {
           <div class="result-main">
             <span class="result-shield">✓</span>
             <div id="token" class="token" aria-live="polite">--- ---</div>
-            <div id="timerCircle" class="timer" role="progressbar" aria-label="验证码剩余时间" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="timer-inner"><div><span id="timer">--</span><span>剩余</span></div></div></div>
+            <div id="timerCircle" class="timer" role="progressbar" aria-label="验证码剩余时间" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="timer-inner"><div><span><b id="timer" class="timer-value">--</b>秒</span><span>剩余</span></div></div></div>
           </div>
           <div class="result-meta">
             <div class="meta-cell"><strong>颁发者示例</strong><span id="issuer">issuer@example.com</span></div>
@@ -1220,7 +1287,7 @@ function homeHtml(scriptNonce: string): string {
 
     <footer class="footer">
       <div>© 2025 2FA Worker　·　基于 <a href="https://developers.cloudflare.com/workers/" rel="noreferrer">Cloudflare Workers</a> 构建　·　Web Crypto</div>
-      <div class="footer-links"><a href="#api">API 文档</a><a href="#guide">使用指南</a><a href="#security">安全性</a><a href="https://github.com/" rel="noreferrer">GitHub ↗</a></div>
+      <div class="footer-links"><a href="#api">API 文档</a><a href="#guide">使用指南</a><a href="#security">安全性</a><a href="${GITHUB_REPOSITORY_URL}" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div>
     </footer>
   </main>
 </div>

@@ -25,6 +25,9 @@ describe("Worker routes", () => {
     expect(body).toContain("即时生成 TOTP 验证码");
     expect(body).toContain("JSON API");
     expect(body).toContain("仅用于测试和自动化用途");
+    expect(body).toContain("https://github.com/deeeeeeeeap/2fa-cfworker");
+    expect(body).toContain("新代码将在 <b>--</b> 秒后生成");
+    expect(body).not.toContain("● GitHub");
   });
 
   it("returns health and robots responses", async () => {
