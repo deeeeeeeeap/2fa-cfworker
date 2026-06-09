@@ -98,7 +98,7 @@ const COMMON_HEADERS: Record<string, string> = {
   "Cross-Origin-Resource-Policy": "same-origin",
   "Origin-Agent-Cluster": "?1",
   "Permissions-Policy": "clipboard-write=(self)",
-  "X-Robots-Tag": "noindex, nofollow",
+  "X-Robots-Tag": "noindex, nofollow, noarchive",
 };
 
 function securityHeaders(contentType: string, cacheControl: string, nonce?: string): Headers {
@@ -278,6 +278,7 @@ function parseOptionsFromSearchParams(params: URLSearchParams): Required<TotpOpt
     algorithm: params.get("algorithm") ?? undefined,
     t0: params.get("t0") ?? undefined,
     time: params.get("time") ?? undefined,
+    timestampMs: params.get("timestampMs") ?? undefined,
   });
 }
 
@@ -353,7 +354,17 @@ const PAGE_CSS = `
     radial-gradient(circle at 10% 22%, rgba(37, 99, 235, .07), transparent 18%),
     radial-gradient(circle at 88% 20%, rgba(37, 99, 235, .08), transparent 19%),
     linear-gradient(180deg, #ffffff 0%, #f8fbff 45%, #ffffff 100%);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "PingFang SC",
+    "Microsoft YaHei",
+    "Noto Sans CJK SC",
+    sans-serif;
 }
 * { box-sizing: border-box; }
 html {
@@ -375,6 +386,7 @@ button,
 input,
 select {
   font: inherit;
+  min-height: 44px;
 }
 button {
   cursor: pointer;
@@ -450,6 +462,7 @@ button {
 }
 .lang button {
   min-width: 88px;
+  min-height: 44px;
   border: 0;
   padding: 13px 20px;
   background: transparent;
@@ -464,6 +477,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-height: 44px;
   padding: 6px 0;
   border-radius: 7px;
   line-height: 1;
@@ -644,10 +658,10 @@ button {
 .input-wrap input {
   width: 100%;
   min-width: 0;
-  height: 39px;
+  height: 44px;
   border: 1px solid #cdd8ea;
   border-radius: 6px;
-  padding: 0 44px 0 14px;
+  padding: 0 54px 0 14px;
   color: #101827;
   background: #fff;
   outline: none;
@@ -663,12 +677,12 @@ button {
 }
 .icon-button {
   position: absolute;
-  right: 7px;
-  top: 5px;
-  width: 28px;
-  height: 28px;
+  right: 0;
+  top: 0;
+  width: 44px;
+  height: 44px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 6px;
   background: transparent;
   color: #52617a;
   cursor: pointer;
@@ -704,7 +718,7 @@ button {
 }
 .primary {
   width: 100%;
-  height: 39px;
+  min-height: 44px;
   margin-top: 14px;
   border: 0;
   border-radius: 6px;
@@ -841,6 +855,23 @@ button {
 .next b {
   color: #1268ee;
   font-size: 16px;
+}
+.field-hint,
+.field-error {
+  margin: 7px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.field-hint {
+  color: #64748b;
+}
+.field-error {
+  color: #b42318;
+  font-weight: 700;
+}
+.field-error:empty,
+.error:empty {
+  display: none;
 }
 .api-desc {
   color: #263854;
@@ -1149,6 +1180,7 @@ button {
     width: 100%;
     gap: 10px;
     font-size: 13px;
+    justify-content: space-between;
   }
   .lang button {
     min-width: 48px;
@@ -1210,6 +1242,13 @@ button {
     padding: 16px;
     min-width: 0;
   }
+  .primary,
+  .input-wrap input,
+  .icon-button,
+  .token,
+  .lang button {
+    min-height: 44px;
+  }
   .result-card,
   .code-box,
   .input-wrap,
@@ -1238,6 +1277,64 @@ button {
     letter-spacing: .09em;
   }
 }
+@media (max-width: 480px) {
+  .shell {
+    width: min(100% - 18px, 1184px);
+  }
+  .brand {
+    font-size: 21px;
+  }
+  .brand-logo {
+    width: 42px;
+    height: 42px;
+  }
+  .nav {
+    align-items: center;
+  }
+  .github {
+    min-height: 44px;
+    align-items: center;
+  }
+  .hero {
+    padding: 28px 12px 34px;
+  }
+  .hero h1 {
+    max-width: 100%;
+    font-size: clamp(27px, 8vw, 31px);
+    line-height: 1.16;
+    letter-spacing: -.035em;
+    white-space: normal;
+    text-wrap: balance;
+  }
+  .hero p {
+    font-size: 16px;
+  }
+  .panel-title {
+    font-size: 18px;
+  }
+  .result-main {
+    padding: 12px;
+  }
+  .token {
+    font-size: clamp(36px, 12vw, 46px);
+    letter-spacing: .07em;
+    padding-inline: 6px;
+  }
+  .footer-links {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}
 `;
 
 const CLIENT_JS = `
@@ -1261,6 +1358,7 @@ const els = {
   endpoint: document.querySelector("#endpoint"),
   jsonToken: document.querySelector("#jsonToken"),
   error: document.querySelector("#error"),
+  secretError: document.querySelector("#secret-error"),
   status: document.querySelector("#status"),
   generate: document.querySelector("#generate"),
   copySecret: document.querySelector("#copySecret"),
@@ -1279,6 +1377,7 @@ const i18n = {
     heroDesc: "根据 TOTP 密钥计算 6 位 2FA 验证码。<br>通过快速 JSON API 进行自动化与集成。",
     panelTitle: "生成 TOTP 验证码",
     secretLabel: "TOTP 密钥",
+    secretHelp: "支持 Base32 字符 A-Z 和 2-7；空格、连字符和末尾 = 会自动忽略。",
     secretPlaceholder: "粘贴 Base32 TOTP 密钥，或打开 /YOUR_SECRET 自动填入",
     copySecret: "复制密钥",
     otpauthLabel: "otpauth:// 链接（可选）",
@@ -1318,6 +1417,7 @@ const i18n = {
     invalidOtpAuth: "otpauth:// 链接格式无效",
     invalidPeriod: "Period 必须是 5 到 300 秒",
     copySuccess: "已复制到剪贴板",
+    copyEmpty: "当前没有可复制的内容",
     copyFail: "复制失败，请手动选择内容",
     invalidFragment: "URL fragment 中的 Secret 编码无效"
   },
@@ -1329,6 +1429,7 @@ const i18n = {
     heroDesc: "Calculate 6-digit 2FA codes from a TOTP secret.<br>Automate and integrate through a fast JSON API.",
     panelTitle: "Generate TOTP code",
     secretLabel: "TOTP secret",
+    secretHelp: "Use Base32 characters A-Z and 2-7; spaces, hyphens, and trailing = are ignored.",
     secretPlaceholder: "Paste a Base32 TOTP secret, or open /YOUR_SECRET to fill it",
     copySecret: "Copy secret",
     otpauthLabel: "otpauth:// link (optional)",
@@ -1368,6 +1469,7 @@ const i18n = {
     invalidOtpAuth: "otpauth:// link format is invalid",
     invalidPeriod: "Period must be between 5 and 300 seconds",
     copySuccess: "Copied to clipboard",
+    copyEmpty: "Nothing to copy yet",
     copyFail: "Copy failed. Please select the text manually.",
     invalidFragment: "Secret encoding in the URL fragment is invalid"
   }
@@ -1410,6 +1512,10 @@ function applyTranslations() {
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", String(active));
   }
+}
+
+function setFieldError(message = "") {
+  if (els.secretError) els.secretError.textContent = message;
 }
 
 function setLanguage(lang) {
@@ -1523,6 +1629,7 @@ function setIdle(message = t("idle")) {
 async function tick() {
   try {
     els.error.textContent = "";
+    setFieldError("");
     applyOtpAuth();
     if (!els.secret.value.trim()) {
       setIdle();
@@ -1553,7 +1660,9 @@ async function tick() {
     els.jsonToken.textContent = token;
   } catch (error) {
     setIdle(t("idle"));
-    els.error.textContent = error.message || String(error);
+    const message = error.message || String(error);
+    setFieldError(message);
+    els.error.textContent = message;
   }
 }
 
@@ -1586,8 +1695,13 @@ function flashCopied(element) {
 }
 
 async function copyValue(value, trigger) {
+  const text = String(value || "").trim();
+  if (!text || text === "------" || text === "--- ---") {
+    els.status.textContent = t("copyEmpty");
+    return;
+  }
   try {
-    await navigator.clipboard.writeText(value);
+    await navigator.clipboard.writeText(text);
     flashCopied(trigger);
     els.error.textContent = "";
     els.status.textContent = t("copySuccess");
@@ -1604,7 +1718,10 @@ els.generate.addEventListener("click", tick);
 els.copySecret.addEventListener("click", (event) => copyValue(els.secret.value, event.currentTarget));
 els.copyOtpauth.addEventListener("click", (event) => copyValue(els.otpauth.value, event.currentTarget));
 els.copyEndpoint.addEventListener("click", (event) => copyValue(els.endpoint.value, event.currentTarget));
-els.copyJson.addEventListener("click", (event) => copyValue('{ "token": "' + els.jsonToken.textContent + '" }', event.currentTarget));
+els.copyJson.addEventListener("click", (event) => {
+  const token = els.jsonToken.textContent || "";
+  copyValue(/^\\d{6,8}$/.test(token) ? '{ "token": "' + token + '" }' : "", event.currentTarget);
+});
 els.token.addEventListener("click", () => {
   const value = (els.token.textContent || "").replace(/\\s/g, "");
   if (/^\\d{6,8}$/.test(value)) copyValue(value, els.token);
@@ -1664,7 +1781,9 @@ function homeHtml(scriptNonce: string): string {
         <div class="panel-title"><span class="inline-icon totp-icon" aria-hidden="true"></span><span data-i18n="panelTitle">生成 TOTP 验证码</span></div>
         <div class="field">
           <label for="secret"><span data-i18n="secretLabel">TOTP 密钥</span> <span class="help">?</span></label>
-          <div class="input-wrap"><input id="secret" autocomplete="off" spellcheck="false" value="" placeholder="粘贴 Base32 TOTP 密钥，或打开 /YOUR_SECRET 自动填入" data-i18n-placeholder="secretPlaceholder"><button id="copySecret" class="icon-button" type="button" aria-label="复制密钥" title="复制密钥" data-i18n-title="copySecret"></button></div>
+          <div class="input-wrap"><input id="secret" autocomplete="off" spellcheck="false" value="" aria-describedby="secret-help secret-error" placeholder="粘贴 Base32 TOTP 密钥，或打开 /YOUR_SECRET 自动填入" data-i18n-placeholder="secretPlaceholder"><button id="copySecret" class="icon-button" type="button" aria-label="复制密钥" title="复制密钥" data-i18n-title="copySecret"></button></div>
+          <p id="secret-help" class="field-hint" data-i18n="secretHelp">支持 Base32 字符 A-Z 和 2-7；空格、连字符和末尾 = 会自动忽略。</p>
+          <p id="secret-error" class="field-error" role="alert" aria-live="assertive"></p>
         </div>
         <div class="field">
           <label for="otpauth"><span data-i18n="otpauthLabel">otpauth:// 链接（可选）</span><span class="help">?</span></label>

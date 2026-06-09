@@ -45,6 +45,8 @@ curl -X POST "https://<your-worker>.<your-subdomain>.workers.dev/api/totp" \
 }
 ```
 
+`GET /api/totp` 支持的查询参数与 `POST /api/totp` body 字段一致：`secret`、`period`、`digits`、`algorithm`、`time`、`timestampMs`、`t0`。`time` 为 Unix 秒，`timestampMs` 为 Unix 毫秒；同时提供时优先使用 `timestampMs`。
+
 ## 本地开发
 
 要求：
@@ -82,7 +84,9 @@ npm run check
 - `npm run typecheck`
 - `npm run test`
 - `node scripts/check-vectors.mjs`
+- `npm run security`
 - `npm run deploy:dry-run`
+- `npm run size`
 
 检查 bundle gzip 体积预算：
 
@@ -94,6 +98,12 @@ npm run size
 
 ```bash
 MAX_GZIP_KIB=768 npm run size
+```
+
+远端开发模式更接近 Cloudflare 边缘运行环境：
+
+```bash
+npm run dev:remote
 ```
 
 ## 通过 Wrangler 部署
@@ -139,7 +149,7 @@ https://totp-worker.<your-subdomain>.workers.dev/
 ## 通过 GitHub + Cloudflare Workers Builds 部署
 
 此仓库已包含 `wrangler.jsonc` 和 `package-lock.json`，适合直接连接 Cloudflare Workers Builds。
-仓库也包含 GitHub Actions CI：每次 push 到 `main` 或 pull request 会运行 `npm ci`、`npm run check` 和 `npm run size`。
+仓库也包含 GitHub Actions CI：每次 push 到 `main` 或 pull request 会运行 `npm ci` 和 `npm run check`。`npm run check` 已包含 typecheck、测试、RFC vectors、日志隐私静态检查、Wrangler dry-run 和 bundle gzip size budget。
 
 Cloudflare Dashboard 推荐配置：
 
@@ -148,7 +158,8 @@ Cloudflare Dashboard 推荐配置：
 | Repository | `deeeeeeeeap/2fa-cfworker` |
 | Production branch | `main` |
 | Root directory | 留空（仓库根目录） |
-| Build command | 留空 |
+| Node version | `22` |
+| Build command | `npm ci && npm run check` |
 | Deploy command | `npm run deploy` |
 | Non-production deploy command | 默认即可，或 `npx wrangler versions upload` |
 
@@ -159,6 +170,8 @@ Cloudflare Dashboard 推荐配置：
 3. 选择 `deeeeeeeeap/2fa-cfworker`。
 4. 确认 `wrangler.jsonc` 中的 `name` 与 Cloudflare Worker 名称一致。
 5. 保存并部署。后续推送到 `main` 会触发自动构建和部署。
+
+> 注意：`wrangler.jsonc` 默认 Worker 名为 `totp-worker`。如果你在 Cloudflare Dashboard 中创建的是 `2fa-cfworker` 或其他名称，请先把 `wrangler.jsonc` 的 `name` 改成同名后再部署。
 
 ## 自定义域名
 
@@ -182,6 +195,7 @@ Cloudflare Dashboard 推荐配置：
 - 不要开启会记录 URL path、query、body、decoded secret 或 generated token 的日志、分析、追踪、Logpush 或第三方可观测性管道。
 - `wrangler.jsonc` 默认关闭 persisted observability、invocation logs、trace persistence 和 Logpush；如果你确认自己的日志管道不会保存敏感字段，再按需开启。
 - 不需要 Cloudflare KV、D1、R2 或其他数据库绑定。
+- 公开部署建议在 Cloudflare Dashboard 为 `/api/totp` 和 `/tok/*` 配置 WAF / Rate Limiting；如果仅自用，建议考虑 Cloudflare Access。
 
 ### 生产日志隐私检查清单
 
@@ -191,6 +205,47 @@ URL 中携带的 TOTP secret 可能出现在浏览器历史、截图、反向代
 - 如需开启 Cloudflare observability，必须保持 `observability.logs.invocation_logs = false`，并确认日志不会持久化或导出敏感字段。
 - 自动化调用优先使用 `POST /api/totp`，避免把 secret 放进 URL。
 - 不把真实 secret、token、cookie、API key 写入 README、测试、Issue、PR、提交信息、截图或日志。
+
+## 最终部署前检查
+
+推荐在部署前按顺序执行：
+
+```bash
+npm ci
+npm run check
+npm run size
+git diff --check
+npm run deploy:dry-run
+```
+
+本地 HTTP smoke test：
+
+```bash
+npm run dev -- --port 8787
+curl -i http://127.0.0.1:8787/healthz
+curl -i http://127.0.0.1:8787/robots.txt
+curl -i -X POST "http://127.0.0.1:8787/api/totp" \
+  -H "Content-Type: application/json" \
+  -d '{"secret":"GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ","period":30,"digits":6,"algorithm":"SHA1"}'
+```
+
+部署后至少确认：
+
+- 首页可打开且 HTML 响应为 `Cache-Control: no-store, max-age=0`。
+- `/healthz` 返回 `{"ok":true}`。
+- `/api/totp` 与 `/tok/<BASE32_SECRET>` 响应包含 `X-Robots-Tag: noindex, nofollow, noarchive`。
+- Cloudflare Dashboard 没有启用会持久保存 URL、query、body、secret 或 token 的日志导出。
+
+## Troubleshooting
+
+| 问题 | 处理方式 |
+| --- | --- |
+| Node 版本错误 | 使用 Node.js 22 或更高版本。Cloudflare Workers Builds 里显式设置 Node version 为 `22`。 |
+| `npm ci` 提示 lockfile 不一致 | 在本地运行 `npm install` 更新 `package-lock.json`，确认 `npm run check` 通过后再提交。 |
+| Wrangler 未登录 | 本地部署前运行 `npx wrangler login`；CI/Workers Builds 使用 Cloudflare 平台授权，不要把 token 写进仓库。 |
+| 部署到错误 Worker | 检查 `wrangler.jsonc` 的 `name` 是否与 Cloudflare Dashboard 中目标 Worker 名称一致。 |
+| Workers Builds 配置错误 | 推荐 `Build command: npm ci && npm run check`，`Deploy command: npm run deploy`，Node version `22`。 |
+| API 返回 invalid secret | 确认 secret 为 Base32 字符 `A-Z` 和 `2-7`；空格、连字符和末尾 `=` 可自动忽略，其他特殊字符不支持。 |
 
 ## 项目结构
 

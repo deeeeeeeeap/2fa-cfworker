@@ -10,10 +10,12 @@ Required operational practices:
 4. Keep `Cache-Control: no-store` on all HTML, API, and token responses while inline CSP nonce scripts are used.
 5. Use a custom domain over HTTPS; Cloudflare Workers provides HTTPS for workers.dev and custom domains, but production should use a domain you control.
 6. Disable or restrict any observability/export pipeline that would store full paths or request bodies.
-7. Use Cloudflare WAF/rate limiting for public deployments.
+7. Use Cloudflare WAF, Rate Limiting, or Cloudflare Access for public deployments.
+8. Keep `X-Robots-Tag: noindex, nofollow, noarchive` on HTML, API, token, and error responses.
 
 Deployment default:
 
 - `wrangler.jsonc` keeps `observability.enabled`, `observability.logs.invocation_logs`, log persistence, trace persistence, and `logpush` disabled for safer first deployment.
 - Only enable persisted observability after confirming your Cloudflare account, Workers Logs, invocation logs, Logpush, traces, and any SIEM/export destination do not persist URL paths, query strings, request bodies, decoded secrets, generated tokens, or IP+secret pairs.
-- Keep `npm run check` green before deploying.
+- Keep `npm run check` green before deploying. It includes the static logging guard, tests, Wrangler dry-run, and bundle size budget.
+- Prefer `POST /api/totp` for automation. Treat `/tok/<secret>` and `GET /api/totp?secret=...` as compatibility or temporary testing paths only.

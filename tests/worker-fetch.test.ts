@@ -23,7 +23,7 @@ describe("Worker routes", () => {
     expect(response.headers.get("content-type")).toContain("text/html");
     expect(response.headers.get("cache-control")).toContain("no-store");
     expect(response.headers.get("pragma")).toBe("no-cache");
-    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     expect(csp).toContain("default-src 'self'");
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("frame-ancestors 'none'");
@@ -34,7 +34,9 @@ describe("Worker routes", () => {
     expect(body).toContain("仅用于测试和自动化用途");
     expect(body).toContain("https://github.com/deeeeeeeeap/2fa-cfworker");
     expect(body).not.toContain("FXPYSQPDSJ5U64X363J3SZXUAPWV5UZY");
-    expect(body).toContain("id=\"secret\" autocomplete=\"off\" spellcheck=\"false\" value=\"\"");
+    expect(body).toContain("id=\"secret\" autocomplete=\"off\" spellcheck=\"false\" value=\"\" aria-describedby=\"secret-help secret-error\"");
+    expect(body).toContain("id=\"secret-help\" class=\"field-hint\"");
+    expect(body).toContain("id=\"secret-error\" class=\"field-error\" role=\"alert\" aria-live=\"assertive\"");
     expect(body).toContain("id=\"endpoint\" readonly value=\"\"");
     expect(body).toContain("data-lang=\"zh\"");
     expect(body).toContain("data-lang=\"en\"");
@@ -55,6 +57,7 @@ describe("Worker routes", () => {
     expect(body).toContain("aria-label=\"点击复制验证码\"");
     expect(body).toContain("role=\"alert\" aria-live=\"assertive\"");
     expect(body).toContain("id=\"status\" class=\"sr-only\" aria-live=\"polite\" aria-atomic=\"true\"");
+    expect(body).toContain("@media (prefers-reduced-motion: reduce)");
     expect(body).toContain("class=\"inline-icon totp-icon\"");
     expect(body).toContain("class=\"inline-icon code-icon\"");
     expect(body).toContain("class=\"button-icon totp-icon\"");
@@ -112,7 +115,7 @@ describe("Worker routes", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toContain("no-store");
-    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     expect(body).toEqual({ token: "94287082" });
   });
 
@@ -130,7 +133,7 @@ describe("Worker routes", () => {
   it("returns metadata for GET and POST /api/totp", async () => {
     const getResult = await json(`/api/totp?secret=${RFC_SHA1_SECRET_BASE32}&time=59&digits=8`);
     expect(getResult.response.headers.get("cache-control")).toContain("no-store");
-    expect(getResult.response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+    expect(getResult.response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     expect(getResult.body).toMatchObject({
       token: "94287082",
       period: 30,
@@ -142,13 +145,20 @@ describe("Worker routes", () => {
       counter: "1",
     });
 
+    const timestampMsResult = await json(`/api/totp?secret=${RFC_SHA1_SECRET_BASE32}&timestampMs=59000&digits=8`);
+    expect(timestampMsResult.body).toMatchObject({
+      token: "94287082",
+      remainingMs: 1000,
+      validUntil: "1970-01-01T00:01:00.000Z",
+    });
+
     const postResult = await json("/api/totp", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ secret: RFC_SHA1_SECRET_BASE32, time: 59, digits: 8 }),
     });
     expect(postResult.response.headers.get("cache-control")).toContain("no-store");
-    expect(postResult.response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+    expect(postResult.response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     expect(postResult.body).toMatchObject({
       token: "94287082",
       counter: "1",
@@ -160,6 +170,8 @@ describe("Worker routes", () => {
   it("requires an explicit secret for JSON API requests", async () => {
     const getResult = await json("/api/totp?time=59");
     expect(getResult.response.status).toBe(400);
+    expect(getResult.response.headers.get("cache-control")).toContain("no-store");
+    expect(getResult.response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     expect(getResult.body).toEqual({ error: "secret query parameter is required" });
 
     const postResult = await json("/api/totp", {
@@ -168,6 +180,8 @@ describe("Worker routes", () => {
       body: JSON.stringify({ time: 59 }),
     });
     expect(postResult.response.status).toBe(400);
+    expect(postResult.response.headers.get("cache-control")).toContain("no-store");
+    expect(postResult.response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     expect(postResult.body).toEqual({ error: "secret is required" });
   });
 
@@ -178,6 +192,7 @@ describe("Worker routes", () => {
       body: "{",
     });
     expect(malformed.response.status).toBe(400);
+    expect(malformed.response.headers.get("cache-control")).toContain("no-store");
     expect(malformed.body.error).toBe("request body must be valid JSON");
 
     const secret = "A".repeat(3000);
@@ -187,6 +202,7 @@ describe("Worker routes", () => {
       body: JSON.stringify({ secret }),
     });
     expect(oversized.response.status).toBe(413);
+    expect(oversized.response.headers.get("cache-control")).toContain("no-store");
     expect(JSON.stringify(oversized.body)).not.toContain(secret);
   });
 
@@ -195,6 +211,8 @@ describe("Worker routes", () => {
     const body = await response.json();
 
     expect(response.status).toBe(405);
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     expect(response.headers.get("allow")).toBe("GET, POST, OPTIONS");
     expect(body).toEqual({ error: "method not allowed" });
   });
@@ -203,9 +221,13 @@ describe("Worker routes", () => {
     const options = await worker.fetch(request("/api/totp", { method: "OPTIONS" }));
     expect(options.status).toBe(204);
     expect(options.headers.get("allow")).toBe("GET, POST, OPTIONS");
+    expect(options.headers.get("cache-control")).toContain("no-store");
+    expect(options.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
 
     const missing = await json("/missing");
     expect(missing.response.status).toBe(404);
+    expect(missing.response.headers.get("cache-control")).toContain("no-store");
+    expect(missing.response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     expect(missing.body).toEqual({ error: "not found" });
   });
 
@@ -214,6 +236,8 @@ describe("Worker routes", () => {
     const { body, response } = await json(`/api/totp?secret=${encodeURIComponent(secret)}&time=59`);
 
     expect(response.status).toBe(400);
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     expect(JSON.stringify(body)).not.toContain(secret);
   });
 });

@@ -21,8 +21,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Typecheck, tests, vectors, Wrangler dry-run
+      - name: Typecheck, tests, vectors, security guard, Wrangler dry-run, size budget
         run: npm run check
-
-      - name: Bundle gzip size budget
-        run: npm run size
