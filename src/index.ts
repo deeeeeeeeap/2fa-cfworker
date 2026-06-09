@@ -137,6 +137,25 @@ function htmlResponse(body: string, nonce: string, status = 200): Response {
   });
 }
 
+function dataUriToBytes(dataUri: string): ByteArray {
+  const marker = "base64,";
+  const markerIndex = dataUri.indexOf(marker);
+  if (markerIndex < 0) throw new Error("invalid image data URI");
+
+  const binary = atob(dataUri.slice(markerIndex + marker.length));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function pngResponse(dataUri: string): Response {
+  return new Response(dataUriToBytes(dataUri), {
+    headers: securityHeaders("image/png", "public, max-age=86400, immutable"),
+  });
+}
+
 function normalizeBase32(input: unknown): string {
   if (typeof input !== "string") {
     throw new HttpError(400, "secret must be a Base32 string");
@@ -380,7 +399,7 @@ button {
   height: 46px;
   flex: 0 0 auto;
   border-radius: 10px;
-  background: url("${LOCK_APP_ICON}") center / cover no-repeat;
+  background: url("${APP_ICON}") center / cover no-repeat;
   box-shadow: 0 12px 24px rgba(18, 109, 237, .22);
 }
 .nav {
@@ -588,12 +607,14 @@ button {
   background: transparent;
   color: #52617a;
   cursor: pointer;
+  opacity: .78;
   transition: background .16s ease, color .16s ease, transform .16s ease;
 }
 .icon-button:hover,
 .icon-button:focus-visible {
   background: rgba(18, 104, 238, .09);
   color: #1268ee;
+  opacity: 1;
   outline: none;
 }
 .icon-button:active {
@@ -602,7 +623,7 @@ button {
 .icon-button::before {
   content: "";
   position: absolute;
-  inset: 4px;
+  inset: 3px;
   background-image: url("${ICON_COPY}");
   background-position: center;
   background-repeat: no-repeat;
@@ -795,10 +816,26 @@ button {
   place-items: center;
   border-radius: 12px;
   background: #edf6ff;
+  overflow: visible;
 }
-.feature-icon.totp-icon { background-image: url("${ICON_TOTP}"); background-size: 35px 35px; }
-.feature-icon.braces-icon { background-image: url("${ICON_BRACES}"); background-size: 34px 34px; }
-.feature-icon.database-icon { background-image: url("${ICON_DATABASE}"); background-size: 34px 34px; }
+.feature-icon img {
+  display: block;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+.feature-icon img.totp-asset {
+  width: 28px;
+  height: 28px;
+}
+.feature-icon img.code-asset {
+  width: 31px;
+  height: 31px;
+}
+.feature-icon img.database-asset {
+  width: 31px;
+  height: 31px;
+}
 .feature h3 {
   margin: 0 0 4px;
   font-size: 15px;
@@ -814,11 +851,9 @@ button {
   color: #f28a0a;
   background: #fff4e5;
 }
-.feature-icon img {
-  width: 34px;
-  max-width: 100%;
-  height: auto;
-  display: block;
+.feature.orange .feature-icon img {
+  width: 32px;
+  height: 32px;
 }
 .warning {
   display: flex;
@@ -1167,8 +1202,9 @@ function homeHtml(scriptNonce: string): string {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>2FA Worker - 生成 TOTP 验证码</title>
 <meta name="theme-color" content="#1468ee">
-<link rel="icon" type="image/png" sizes="192x192" href="${LOCK_APP_ICON}">
-<link rel="apple-touch-icon" href="${LOCK_APP_ICON}">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon.png">
+<link rel="shortcut icon" type="image/png" href="/favicon.ico">
+<link rel="apple-touch-icon" sizes="192x192" href="/apple-touch-icon.png">
 <style>${PAGE_CSS}</style>
 </head>
 <body>
@@ -1241,10 +1277,10 @@ function homeHtml(scriptNonce: string): string {
     </section>
 
     <section class="feature-grid" id="guide">
-      <div class="feature"><span class="feature-icon totp-icon" aria-hidden="true"></span><div><h3>即时 TOTP 验证码</h3><p>生成有效的 6 位数字验证码，实时倒计时确保使用时效性。</p></div></div>
-      <div class="feature"><span class="feature-icon braces-icon" aria-hidden="true"></span><div><h3>JSON API</h3><p>简单、快速、轻量的 API 设计，适合自动化和集成。</p></div></div>
+      <div class="feature"><span class="feature-icon" aria-hidden="true"><img class="totp-asset" src="${ICON_TOTP}" alt=""></span><div><h3>即时 TOTP 验证码</h3><p>生成有效的 6 位数字验证码，实时倒计时确保使用时效性。</p></div></div>
+      <div class="feature"><span class="feature-icon" aria-hidden="true"><img class="code-asset" src="${ICON_CODE}" alt=""></span><div><h3>JSON API</h3><p>简单、快速、轻量的 API 设计，适合自动化和集成。</p></div></div>
       <div class="feature orange"><span class="feature-icon"><img src="${CLOUDFLARE_MARK}" alt=""></span><div><h3>运行在 Cloudflare Workers</h3><p>全球边缘性能，构建速度快，可靠性高。</p></div></div>
-      <div class="feature"><span class="feature-icon database-icon" aria-hidden="true"></span><div><h3>无需数据库</h3><p>无状态设计，无需存储、无设置、无需维护。</p></div></div>
+      <div class="feature"><span class="feature-icon" aria-hidden="true"><img class="database-asset" src="${ICON_DATABASE}" alt=""></span><div><h3>无需数据库</h3><p>无状态设计，无需存储、无设置、无需维护。</p></div></div>
     </section>
 
     <section id="security" class="warning">
@@ -1300,7 +1336,16 @@ async function readJsonBody(request: Request): Promise<Record<string, unknown>> 
 }
 
 function allowedMethods(pathname: string): string[] | null {
-  if (pathname === "/" || pathname === "/robots.txt" || pathname === "/healthz") return ["GET", "OPTIONS"];
+  if (
+    pathname === "/" ||
+    pathname === "/robots.txt" ||
+    pathname === "/healthz" ||
+    pathname === "/favicon.ico" ||
+    pathname === "/favicon.png" ||
+    pathname === "/apple-touch-icon.png"
+  ) {
+    return ["GET", "OPTIONS"];
+  }
   if (pathname.startsWith("/tok/")) return ["GET", "OPTIONS"];
   if (pathname === "/api/totp") return ["GET", "POST", "OPTIONS"];
   return null;
@@ -1341,6 +1386,15 @@ async function handleRequest(request: Request): Promise<Response> {
   if (url.pathname === "/" && request.method === "GET") {
     const scriptNonce = nonce();
     return htmlResponse(homeHtml(scriptNonce), scriptNonce);
+  }
+
+  if (
+    (url.pathname === "/favicon.ico" ||
+      url.pathname === "/favicon.png" ||
+      url.pathname === "/apple-touch-icon.png") &&
+    request.method === "GET"
+  ) {
+    return pngResponse(APP_ICON);
   }
 
   if (url.pathname === "/robots.txt" && request.method === "GET") {

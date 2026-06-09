@@ -27,7 +27,9 @@ describe("Worker routes", () => {
     expect(body).toContain("仅用于测试和自动化用途");
     expect(body).toContain("https://github.com/deeeeeeeeap/2fa-cfworker");
     expect(body).toContain("新代码将在 <b>--</b> 秒后生成");
-    expect(body).toContain("rel=\"icon\" type=\"image/png\"");
+    expect(body).toContain("rel=\"icon\" type=\"image/png\" sizes=\"192x192\" href=\"/favicon.png\"");
+    expect(body).toContain("rel=\"shortcut icon\" type=\"image/png\" href=\"/favicon.ico\"");
+    expect(body).toContain("rel=\"apple-touch-icon\" sizes=\"192x192\" href=\"/apple-touch-icon.png\"");
     expect(body).toContain("class=\"brand-logo\"");
     expect(body).toContain("class=\"cf-logo\"");
     expect(body).toContain("id=\"token\" class=\"token\" type=\"button\"");
@@ -36,7 +38,9 @@ describe("Worker routes", () => {
     expect(body).toContain("class=\"inline-icon code-icon\"");
     expect(body).toContain("class=\"button-icon totp-icon\"");
     expect(body).toContain("class=\"label-icon braces-icon\"");
-    expect(body).toContain("class=\"feature-icon database-icon\"");
+    expect(body).toContain("class=\"totp-asset\"");
+    expect(body).toContain("class=\"code-asset\"");
+    expect(body).toContain("class=\"database-asset\"");
     expect(body).toContain("class=\"warning-mark\"");
     expect(body).not.toContain("● GitHub");
     expect(body).not.toContain("↯");
@@ -59,6 +63,19 @@ describe("Worker routes", () => {
     expect(body).not.toContain("颁发者示例");
     expect(body).not.toContain("issuer@example.com");
     expect(body).not.toContain("账户示例");
+  });
+
+  it("serves the app favicon as an actual image route", async () => {
+    for (const path of ["/favicon.ico", "/favicon.png", "/apple-touch-icon.png"]) {
+      const response = await worker.fetch(request(path));
+      const bytes = new Uint8Array(await response.arrayBuffer());
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toContain("image/png");
+      expect(response.headers.get("cache-control")).toContain("public");
+      expect(bytes.length).toBeGreaterThan(1000);
+      expect(Array.from(bytes.slice(0, 8))).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+    }
   });
 
   it("returns health and robots responses", async () => {
