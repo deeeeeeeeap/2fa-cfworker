@@ -31,7 +31,10 @@ describe("Worker routes", () => {
     expect(body).toContain("rel=\"shortcut icon\" type=\"image/png\" href=\"/favicon.ico\"");
     expect(body).toContain("rel=\"apple-touch-icon\" sizes=\"192x192\" href=\"/apple-touch-icon.png\"");
     expect(body).toContain("class=\"brand-logo\"");
-    expect(body).toContain("class=\"cf-logo\"");
+    expect(body).toContain("class=\"hero-asset hero-globe\"");
+    expect(body).toContain("class=\"hero-asset hero-cloudflare\"");
+    expect(body).toContain("class=\"hero-asset hero-dots\"");
+    expect(body).toContain("class=\"hero-asset hero-dot-large\"");
     expect(body).toContain("id=\"token\" class=\"token\" type=\"button\"");
     expect(body).toContain("aria-label=\"点击复制验证码\"");
     expect(body).toContain("class=\"inline-icon totp-icon\"");

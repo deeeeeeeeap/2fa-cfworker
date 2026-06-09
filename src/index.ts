@@ -9,6 +9,15 @@
  * Security rule: never log request URLs, request bodies, or decoded secrets.
  */
 
+import {
+  HERO_CLOUDFLARE,
+  HERO_DOT_LARGE,
+  HERO_DOT_SMALL,
+  HERO_DOTS,
+  HERO_GLOBE,
+  HERO_SMALL_CLOUD,
+} from "./visual-assets";
+
 type TotpAlgorithm = "SHA1" | "SHA256" | "SHA512";
 
 type TotpOptions = {
@@ -360,21 +369,21 @@ button {
 .page {
   min-height: 100vh;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 14% 25%, rgba(84, 154, 255, .10), transparent 15%),
-    radial-gradient(circle at 88% 26%, rgba(84, 154, 255, .12), transparent 16%);
+  padding-top: 80px;
+  background: #fff;
 }
 .shell {
   width: min(1184px, calc(100vw - 48px));
   margin: 0 auto;
 }
 .topbar {
-  height: 82px;
-  border-bottom: 1px solid #e6edf8;
-  background: rgba(255, 255, 255, .86);
-  backdrop-filter: blur(12px);
+  height: 134px;
+  border-top: 1px solid #d9e2ee;
+  border-bottom: 1px solid #dfe8f4;
+  background: #fff;
 }
 .topbar-inner {
+  width: min(1946px, calc(100vw - 102px));
   height: 100%;
   display: flex;
   align-items: center;
@@ -383,8 +392,8 @@ button {
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 26px;
+  gap: 20px;
+  font-size: 42px;
   font-weight: 800;
   letter-spacing: -.03em;
 }
@@ -395,18 +404,19 @@ button {
   color: #0b1a45;
 }
 .brand-logo {
-  width: 46px;
-  height: 46px;
+  width: 76px;
+  height: 76px;
   flex: 0 0 auto;
-  border-radius: 10px;
+  border-radius: 14px;
   background: url("${APP_ICON}") center / cover no-repeat;
-  box-shadow: 0 12px 24px rgba(18, 109, 237, .22);
+  box-shadow: 0 12px 24px rgba(18, 109, 237, .16);
 }
 .nav {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 42px;
   color: #081a45;
+  font-size: 28px;
   font-weight: 700;
 }
 .nav a {
@@ -422,13 +432,13 @@ button {
   display: inline-flex;
   overflow: hidden;
   border: 1px solid #cfdcf1;
-  border-radius: 8px;
+  border-radius: 12px;
   background: #fff;
 }
 .lang button {
-  min-width: 58px;
+  min-width: 102px;
   border: 0;
-  padding: 9px 16px;
+  padding: 17px 22px;
   background: transparent;
   color: #0b1b3d;
   font-weight: 800;
@@ -447,54 +457,96 @@ button {
 }
 .hero {
   position: relative;
-  min-height: 220px;
-  padding: 66px 230px 22px;
-  overflow: hidden;
+  min-height: 390px;
+  padding: 112px 24px 74px;
+  overflow: visible;
   isolation: isolate;
   text-align: center;
 }
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0 calc(50% - 50vw);
+  z-index: -1;
+  border-radius: 0;
+  background:
+    radial-gradient(ellipse at 8% 78%, rgba(80, 150, 255, .13), transparent 30%),
+    radial-gradient(ellipse at 91% 40%, rgba(86, 154, 255, .09), transparent 25%),
+    linear-gradient(180deg, #ffffff 0%, #fbfdff 54%, #f6fbff 100%);
+}
 .hero h1 {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   margin: 0;
-  font-size: clamp(34px, 4.5vw, 48px);
+  font-size: clamp(48px, 3.35vw, 68px);
   line-height: 1.08;
   color: #101a33;
   letter-spacing: -.045em;
   font-weight: 900;
+  white-space: nowrap;
 }
 .hero p {
   position: relative;
-  z-index: 1;
-  margin: 17px 0 0;
+  z-index: 2;
+  margin: 40px 0 0;
   color: #40516f;
-  font-size: 18px;
-  line-height: 1.55;
+  font-size: clamp(21px, 1.37vw, 28px);
+  line-height: 1.52;
 }
-.hero-art {
+.hero-assets {
   position: absolute;
-  z-index: 0;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 50vw);
+  right: calc(50% - 50vw);
+  z-index: 1;
   pointer-events: none;
-  opacity: .95;
 }
-.hero-art.right {
-  right: 32px;
-  top: 72px;
-  width: 180px;
-  height: 130px;
-}
-.cf-logo {
+.hero-asset {
   position: absolute;
-  right: 0;
-  bottom: 4px;
-  width: 154px;
-  height: auto;
+  display: block;
+  user-select: none;
+}
+.hero-globe {
+  right: 178px;
+  top: 128px;
+  width: 248px;
+  opacity: .46;
+}
+.hero-cloudflare {
+  right: 128px;
+  top: 213px;
+  width: 270px;
+}
+.hero-small-cloud {
+  right: 382px;
+  top: 254px;
+  width: 76px;
+  opacity: .58;
+}
+.hero-dots {
+  right: 84px;
+  top: 128px;
+  width: 78px;
+  opacity: .42;
+}
+.hero-dot-small {
+  right: 435px;
+  top: 142px;
+  width: 12px;
+  opacity: .62;
+}
+.hero-dot-large {
+  right: 84px;
+  top: 222px;
+  width: 13px;
+  opacity: .68;
 }
 .main-grid {
   display: grid;
   grid-template-columns: 1.22fr .88fr;
   gap: 14px;
-  margin-top: 18px;
+  margin-top: 74px;
 }
 .panel,
 .feature,
@@ -898,11 +950,111 @@ button {
   display: flex;
   gap: 30px;
 }
+@media (max-width: 1180px) {
+  .page {
+    padding-top: 0;
+  }
+  .topbar {
+    height: 108px;
+    border-top: 0;
+  }
+  .topbar-inner {
+    width: min(1184px, calc(100vw - 48px));
+  }
+  .brand {
+    gap: 12px;
+    font-size: 26px;
+  }
+  .brand-logo {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+  }
+  .nav {
+    gap: 28px;
+    font-size: 16px;
+  }
+  .lang {
+    border-radius: 8px;
+  }
+  .lang button {
+    min-width: 58px;
+    padding: 9px 16px;
+  }
+  .hero {
+    padding: 96px 24px 72px;
+  }
+  .hero h1 {
+    font-size: clamp(46px, 5vw, 58px);
+  }
+  .hero p {
+    margin-top: 24px;
+    font-size: 21px;
+  }
+  .hero-globe {
+    right: 102px;
+    top: 118px;
+    width: 214px;
+    opacity: .26;
+  }
+  .hero-cloudflare {
+    right: 26px;
+    top: 210px;
+    width: 220px;
+  }
+  .hero-small-cloud {
+    right: 238px;
+    top: 252px;
+    width: 58px;
+    opacity: .48;
+  }
+  .hero-dots {
+    right: 22px;
+    top: 130px;
+    width: 76px;
+    opacity: .34;
+  }
+  .hero-dot-small {
+    right: 325px;
+    top: 145px;
+    width: 10px;
+    opacity: .52;
+  }
+  .hero-dot-large {
+    right: 34px;
+    top: 222px;
+    width: 11px;
+    opacity: .58;
+  }
+  .main-grid {
+    margin-top: 0;
+  }
+}
 @media (max-width: 960px) {
-  .hero-art { display: none; }
+  .topbar {
+    height: auto;
+  }
   .hero {
     min-height: 0;
-    padding-inline: 0;
+    padding: 72px 24px 56px;
+  }
+  .hero-assets {
+    position: static;
+    display: flex;
+    justify-content: center;
+    margin-top: 24px;
+  }
+  .hero-globe,
+  .hero-small-cloud,
+  .hero-dots,
+  .hero-dot-small,
+  .hero-dot-large {
+    display: none;
+  }
+  .hero-cloudflare {
+    position: static;
+    width: 170px;
+    margin: 0 auto;
   }
   .main-grid,
   .feature-grid {
@@ -921,7 +1073,6 @@ button {
     width: min(100% - 24px, 1184px);
   }
   .topbar {
-    height: auto;
     padding: 14px 0;
   }
   .topbar-inner,
@@ -951,13 +1102,24 @@ button {
   .hero {
     padding-top: 36px;
   }
+  .hero-cloudflare {
+    width: 142px;
+    margin-top: 22px;
+  }
   .hero h1 {
     max-width: 330px;
     margin-inline: auto;
     font-size: clamp(30px, 9vw, 38px);
     letter-spacing: -.05em;
+    white-space: normal;
     overflow-wrap: anywhere;
     text-wrap: balance;
+  }
+  .hero p {
+    max-width: 330px;
+    margin-inline: auto;
+    font-size: 18px;
+    overflow-wrap: anywhere;
   }
   .panel {
     padding: 16px;
@@ -1224,11 +1386,16 @@ function homeHtml(scriptNonce: string): string {
 
   <main class="shell">
     <section class="hero">
-      <div class="hero-art right" aria-hidden="true">
-        <img class="cf-logo" src="${CLOUDFLARE_MARK}" alt="">
-      </div>
       <h1>即时生成 TOTP 验证码</h1>
       <p>根据 TOTP 密钥计算 6 位 2FA 验证码。<br>通过快速 JSON API 进行自动化与集成。</p>
+      <div class="hero-assets" aria-hidden="true">
+        <img class="hero-asset hero-globe" src="${HERO_GLOBE}" alt="">
+        <img class="hero-asset hero-cloudflare" src="${HERO_CLOUDFLARE}" alt="">
+        <img class="hero-asset hero-small-cloud" src="${HERO_SMALL_CLOUD}" alt="">
+        <img class="hero-asset hero-dots" src="${HERO_DOTS}" alt="">
+        <img class="hero-asset hero-dot-small" src="${HERO_DOT_SMALL}" alt="">
+        <img class="hero-asset hero-dot-large" src="${HERO_DOT_LARGE}" alt="">
+      </div>
     </section>
 
     <section class="main-grid">
@@ -1279,7 +1446,7 @@ function homeHtml(scriptNonce: string): string {
     <section class="feature-grid" id="guide">
       <div class="feature"><span class="feature-icon" aria-hidden="true"><img class="totp-asset" src="${ICON_TOTP}" alt=""></span><div><h3>即时 TOTP 验证码</h3><p>生成有效的 6 位数字验证码，实时倒计时确保使用时效性。</p></div></div>
       <div class="feature"><span class="feature-icon" aria-hidden="true"><img class="code-asset" src="${ICON_CODE}" alt=""></span><div><h3>JSON API</h3><p>简单、快速、轻量的 API 设计，适合自动化和集成。</p></div></div>
-      <div class="feature orange"><span class="feature-icon"><img src="${CLOUDFLARE_MARK}" alt=""></span><div><h3>运行在 Cloudflare Workers</h3><p>全球边缘性能，构建速度快，可靠性高。</p></div></div>
+      <div class="feature orange"><span class="feature-icon"><img src="${HERO_CLOUDFLARE}" alt=""></span><div><h3>运行在 Cloudflare Workers</h3><p>全球边缘性能，构建速度快，可靠性高。</p></div></div>
       <div class="feature"><span class="feature-icon" aria-hidden="true"><img class="database-asset" src="${ICON_DATABASE}" alt=""></span><div><h3>无需数据库</h3><p>无状态设计，无需存储、无设置、无需维护。</p></div></div>
     </section>
 
