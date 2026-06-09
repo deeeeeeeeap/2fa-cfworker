@@ -27,7 +27,15 @@ describe("Worker routes", () => {
     expect(body).toContain("仅用于测试和自动化用途");
     expect(body).toContain("https://github.com/deeeeeeeeap/2fa-cfworker");
     expect(body).toContain("新代码将在 <b>--</b> 秒后生成");
+    expect(body).toContain("class=\"cf-logo\"");
     expect(body).not.toContain("● GitHub");
+    expect(body).not.toContain("class=\"globe\"");
+    expect(body).not.toContain("mix-blend-mode");
+    expect(body).not.toContain("result-meta");
+    expect(body).not.toContain("meta-cell");
+    expect(body).not.toContain("颁发者示例");
+    expect(body).not.toContain("issuer@example.com");
+    expect(body).not.toContain("账户示例");
   });
 
   it("returns health and robots responses", async () => {
