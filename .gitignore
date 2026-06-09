@@ -1,0 +1,10 @@
+node_modules/
+.wrangler/
+.scratch/
+dist/
+coverage/
+*.log
+.env*
+.dev.vars*
+worker-configuration.d.ts
+design-qa.md

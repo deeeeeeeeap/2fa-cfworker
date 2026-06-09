@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "totp-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-08",
+  "workers_dev": true,
+
+  // This Worker handles TOTP secrets in compatibility URLs (/tok/<secret>).
+  // Keep persisted observability off unless you have confirmed URL/query/body
+  // fields are not stored or exported in your Cloudflare account pipeline.
+  "observability": {
+    "enabled": false
+  }
+
+  // Production custom domain example:
+  // "workers_dev": false,
+  // "routes": [
+  //   { "pattern": "2fa.example.com", "custom_domain": true }
+  // ]
+}
