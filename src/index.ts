@@ -369,7 +369,7 @@ button {
 .page {
   min-height: 100vh;
   overflow: hidden;
-  padding-top: 80px;
+  padding-top: 40px;
   background: #fff;
 }
 .shell {
@@ -377,7 +377,7 @@ button {
   margin: 0 auto;
 }
 .topbar {
-  height: 134px;
+  height: 112px;
   border-top: 1px solid #d9e2ee;
   border-bottom: 1px solid #dfe8f4;
   background: #fff;
@@ -392,8 +392,8 @@ button {
 .brand {
   display: flex;
   align-items: center;
-  gap: 20px;
-  font-size: 42px;
+  gap: 16px;
+  font-size: 36px;
   font-weight: 800;
   letter-spacing: -.03em;
 }
@@ -404,19 +404,19 @@ button {
   color: #0b1a45;
 }
 .brand-logo {
-  width: 76px;
-  height: 76px;
+  width: 64px;
+  height: 64px;
   flex: 0 0 auto;
-  border-radius: 14px;
+  border-radius: 13px;
   background: url("${APP_ICON}") center / cover no-repeat;
   box-shadow: 0 12px 24px rgba(18, 109, 237, .16);
 }
 .nav {
   display: flex;
   align-items: center;
-  gap: 42px;
+  gap: 32px;
   color: #081a45;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
 }
 .nav a {
@@ -436,9 +436,9 @@ button {
   background: #fff;
 }
 .lang button {
-  min-width: 102px;
+  min-width: 88px;
   border: 0;
-  padding: 17px 22px;
+  padding: 13px 20px;
   background: transparent;
   color: #0b1b3d;
   font-weight: 800;
@@ -457,8 +457,8 @@ button {
 }
 .hero {
   position: relative;
-  min-height: 390px;
-  padding: 112px 24px 74px;
+  min-height: 338px;
+  padding: 82px 24px 58px;
   overflow: visible;
   isolation: isolate;
   text-align: center;
@@ -478,7 +478,7 @@ button {
   position: relative;
   z-index: 2;
   margin: 0;
-  font-size: clamp(48px, 3.35vw, 68px);
+  font-size: clamp(44px, 3.1vw, 60px);
   line-height: 1.08;
   color: #101a33;
   letter-spacing: -.045em;
@@ -488,7 +488,7 @@ button {
 .hero p {
   position: relative;
   z-index: 2;
-  margin: 40px 0 0;
+  margin: 28px 0 0;
   color: #40516f;
   font-size: clamp(21px, 1.37vw, 28px);
   line-height: 1.52;
@@ -509,36 +509,36 @@ button {
 }
 .hero-globe {
   right: 178px;
-  top: 128px;
+  top: 96px;
   width: 248px;
   opacity: .46;
 }
 .hero-cloudflare {
   right: 128px;
-  top: 213px;
+  top: 174px;
   width: 270px;
 }
 .hero-small-cloud {
   right: 382px;
-  top: 254px;
+  top: 214px;
   width: 76px;
   opacity: .58;
 }
 .hero-dots {
   right: 84px;
-  top: 128px;
+  top: 96px;
   width: 78px;
   opacity: .42;
 }
 .hero-dot-small {
   right: 435px;
-  top: 142px;
+  top: 108px;
   width: 12px;
   opacity: .62;
 }
 .hero-dot-large {
   right: 84px;
-  top: 222px;
+  top: 184px;
   width: 13px;
   opacity: .68;
 }
@@ -546,7 +546,7 @@ button {
   display: grid;
   grid-template-columns: 1.22fr .88fr;
   gap: 14px;
-  margin-top: 74px;
+  margin-top: 42px;
 }
 .panel,
 .feature,
@@ -935,11 +935,19 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 18px;
   margin: 18px 0 22px;
   padding-top: 13px;
   border-top: 1px solid #dde7f5;
   color: #40516f;
   font-size: 13px;
+}
+.footer-copy {
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.footer-line + .footer-line::before {
+  content: " · ";
 }
 .footer a {
   color: #23314f;
@@ -948,7 +956,8 @@ button {
 }
 .footer-links {
   display: flex;
-  gap: 30px;
+  align-items: center;
+  gap: 18px;
 }
 @media (max-width: 1180px) {
   .page {
@@ -1121,6 +1130,33 @@ button {
     font-size: 18px;
     overflow-wrap: anywhere;
   }
+  .footer {
+    display: block;
+    text-align: center;
+    margin: 18px 0 18px;
+  }
+  .footer-copy {
+    max-width: 320px;
+    margin: 0 auto;
+    line-height: 1.75;
+  }
+  .footer-line {
+    display: block;
+  }
+  .footer-line + .footer-line::before {
+    content: "";
+  }
+  .footer-links {
+    justify-content: center;
+    margin-top: 8px;
+  }
+  .api-note-box {
+    align-items: flex-start;
+  }
+  .api-note-box span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
   .panel {
     padding: 16px;
     min-width: 0;
@@ -1148,12 +1184,12 @@ button {
 
 const CLIENT_JS = `
 const maxSecretLength = 256;
-const sampleSecret = "FXPYSQPDSJ5U64X363J3SZXUAPWV5UZY";
 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const hashName = { SHA1: "SHA-1", SHA256: "SHA-256", SHA512: "SHA-512" };
 let cachedSecret = "";
 let cachedAlgorithm = "";
 let cachedKey = null;
+let currentLang = "zh";
 const els = {
   secret: document.querySelector("#secret"),
   otpauth: document.querySelector("#otpauth"),
@@ -1171,8 +1207,158 @@ const els = {
   copySecret: document.querySelector("#copySecret"),
   copyOtpauth: document.querySelector("#copyOtpauth"),
   copyEndpoint: document.querySelector("#copyEndpoint"),
-  copyJson: document.querySelector("#copyJson")
+  copyJson: document.querySelector("#copyJson"),
+  langButtons: document.querySelectorAll("[data-lang]")
 };
+
+const i18n = {
+  zh: {
+    pageTitle: "2FA Worker - 生成 TOTP 验证码",
+    navLabel: "主导航",
+    langLabel: "语言",
+    heroTitle: "即时生成 TOTP 验证码",
+    heroDesc: "根据 TOTP 密钥计算 6 位 2FA 验证码。<br>通过快速 JSON API 进行自动化与集成。",
+    panelTitle: "生成 TOTP 验证码",
+    secretLabel: "TOTP 密钥",
+    secretPlaceholder: "粘贴 Base32 TOTP 密钥，或打开 /YOUR_SECRET 自动填入",
+    copySecret: "复制密钥",
+    otpauthLabel: "otpauth:// 链接（可选）",
+    otpauthPlaceholder: "otpauth://totp/Issuer:account?secret=YOUR_SECRET",
+    copyOtpauth: "复制链接",
+    generate: "生成验证码",
+    tokenAria: "点击复制验证码",
+    timerAria: "验证码剩余时间",
+    seconds: "秒",
+    remaining: "剩余",
+    idle: "新代码将在 <b>--</b> 秒后生成",
+    next: "新代码将在 <b>{remaining}</b> 秒后生成",
+    apiTitle: "JSON API",
+    apiDesc: "以编程方式获取当前 TOTP 验证码。",
+    endpointLabel: "接口地址",
+    endpointPlaceholder: "输入密钥后自动生成 /tok/YOUR_SECRET",
+    copyEndpoint: "复制接口",
+    returnLabel: "返回结果（application/json）",
+    copyJson: "复制 JSON",
+    apiNote: "此接口返回 JSON 格式结果，便于与脚本和服务集成。",
+    featureTotpTitle: "即时 TOTP 验证码",
+    featureTotpText: "生成有效的 6 位数字验证码，实时倒计时确保使用时效性。",
+    featureApiTitle: "JSON API",
+    featureApiText: "简单、快速、轻量的 API 设计，适合自动化和集成。",
+    featureCfTitle: "运行在 Cloudflare Workers",
+    featureCfText: "全球边缘性能，构建速度快，可靠性高。",
+    featureDbTitle: "无需数据库",
+    featureDbText: "无状态设计，无需存储、无设置、无需维护。",
+    warningTitle: "仅用于测试和自动化用途",
+    warningText: "请勿公开泄露生产环境的密钥。您需要对密钥的安全性负责。",
+    footerCopy: "<span class=\\"footer-line\\">© 2025 2FA Worker</span><span class=\\"footer-line\\">基于 <a href=\\"https://developers.cloudflare.com/workers/\\" rel=\\"noreferrer\\">Cloudflare Workers</a> 构建</span><span class=\\"footer-line\\">Web Crypto</span>",
+    github: "GitHub",
+    normalizeMissing: "请输入 Secret",
+    normalizeTooLong: "Secret 过长",
+    normalizeInvalid: "Secret 只能包含 Base32 字符 A-Z 和 2-7",
+    invalidUrlEncoding: "Secret URL 编码无效",
+    invalidOtpAuth: "otpauth:// 链接格式无效",
+    invalidPeriod: "Period 必须是 5 到 300 秒",
+    copyFail: "复制失败，请手动选择内容",
+    invalidFragment: "URL fragment 中的 Secret 编码无效"
+  },
+  en: {
+    pageTitle: "2FA Worker - Generate TOTP codes",
+    navLabel: "Primary navigation",
+    langLabel: "Language",
+    heroTitle: "Generate TOTP codes instantly",
+    heroDesc: "Calculate 6-digit 2FA codes from a TOTP secret.<br>Automate and integrate through a fast JSON API.",
+    panelTitle: "Generate TOTP code",
+    secretLabel: "TOTP secret",
+    secretPlaceholder: "Paste a Base32 TOTP secret, or open /YOUR_SECRET to fill it",
+    copySecret: "Copy secret",
+    otpauthLabel: "otpauth:// link (optional)",
+    otpauthPlaceholder: "otpauth://totp/Issuer:account?secret=YOUR_SECRET",
+    copyOtpauth: "Copy link",
+    generate: "Generate code",
+    tokenAria: "Click to copy code",
+    timerAria: "Code time remaining",
+    seconds: "sec",
+    remaining: "left",
+    idle: "Next code will be generated in <b>--</b> seconds",
+    next: "Next code will be generated in <b>{remaining}</b> seconds",
+    apiTitle: "JSON API",
+    apiDesc: "Get the current TOTP code programmatically.",
+    endpointLabel: "Endpoint",
+    endpointPlaceholder: "Generated after entering a secret: /tok/YOUR_SECRET",
+    copyEndpoint: "Copy endpoint",
+    returnLabel: "Response (application/json)",
+    copyJson: "Copy JSON",
+    apiNote: "This endpoint returns JSON so scripts and services can integrate easily.",
+    featureTotpTitle: "Instant TOTP code",
+    featureTotpText: "Generate a valid 6-digit code with a live countdown for timing confidence.",
+    featureApiTitle: "JSON API",
+    featureApiText: "Simple, fast, lightweight API design for automation and integration.",
+    featureCfTitle: "Runs on Cloudflare Workers",
+    featureCfText: "Global edge performance with fast builds and high reliability.",
+    featureDbTitle: "No database required",
+    featureDbText: "Stateless by design: no storage, no setup, and no maintenance.",
+    warningTitle: "For testing and automation only",
+    warningText: "Do not expose production secrets publicly. You are responsible for keeping secrets safe.",
+    footerCopy: "<span class=\\"footer-line\\">© 2025 2FA Worker</span><span class=\\"footer-line\\">Built on <a href=\\"https://developers.cloudflare.com/workers/\\" rel=\\"noreferrer\\">Cloudflare Workers</a></span><span class=\\"footer-line\\">Web Crypto</span>",
+    github: "GitHub",
+    normalizeMissing: "Please enter a Secret",
+    normalizeTooLong: "Secret is too long",
+    normalizeInvalid: "Secret can only contain Base32 characters A-Z and 2-7",
+    invalidUrlEncoding: "Secret URL encoding is invalid",
+    invalidOtpAuth: "otpauth:// link format is invalid",
+    invalidPeriod: "Period must be between 5 and 300 seconds",
+    copyFail: "Copy failed. Please select the text manually.",
+    invalidFragment: "Secret encoding in the URL fragment is invalid"
+  }
+};
+
+function t(key) {
+  return (i18n[currentLang] && i18n[currentLang][key]) || i18n.zh[key] || key;
+}
+
+function detectInitialLanguage() {
+  try {
+    const saved = localStorage.getItem("language");
+    if (saved === "zh" || saved === "en") return saved;
+  } catch {}
+  return "zh";
+}
+
+function applyTranslations() {
+  document.documentElement.lang = currentLang === "en" ? "en" : "zh-CN";
+  document.title = t("pageTitle");
+  for (const element of document.querySelectorAll("[data-i18n]")) {
+    element.textContent = t(element.dataset.i18n);
+  }
+  for (const element of document.querySelectorAll("[data-i18n-html]")) {
+    element.innerHTML = t(element.dataset.i18nHtml);
+  }
+  for (const element of document.querySelectorAll("[data-i18n-placeholder]")) {
+    element.placeholder = t(element.dataset.i18nPlaceholder);
+  }
+  for (const element of document.querySelectorAll("[data-i18n-label]")) {
+    element.setAttribute("aria-label", t(element.dataset.i18nLabel));
+  }
+  for (const element of document.querySelectorAll("[data-i18n-title]")) {
+    const value = t(element.dataset.i18nTitle);
+    element.title = value;
+    element.setAttribute("aria-label", value);
+  }
+  for (const button of els.langButtons) {
+    const active = button.dataset.lang === currentLang;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  }
+}
+
+function setLanguage(lang) {
+  currentLang = lang === "en" ? "en" : "zh";
+  try {
+    localStorage.setItem("language", currentLang);
+  } catch {}
+  applyTranslations();
+  tick();
+}
 
 function normalizeBase32(input) {
   let secret = String(input || "").trim();
@@ -1180,13 +1366,13 @@ function normalizeBase32(input) {
     try {
       secret = decodeURIComponent(secret);
     } catch {
-      throw new Error("Secret URL 编码无效");
+      throw new Error(t("invalidUrlEncoding"));
     }
   }
   secret = secret.replace(/[\\s-]/g, "").replace(/=+$/g, "").toUpperCase();
-  if (!secret) throw new Error("请输入 Secret");
-  if (secret.length > maxSecretLength) throw new Error("Secret 过长");
-  if (!/^[A-Z2-7]+$/.test(secret)) throw new Error("Secret 只能包含 Base32 字符 A-Z 和 2-7");
+  if (!secret) throw new Error(t("normalizeMissing"));
+  if (secret.length > maxSecretLength) throw new Error(t("normalizeTooLong"));
+  if (!/^[A-Z2-7]+$/.test(secret)) throw new Error(t("normalizeInvalid"));
   return secret;
 }
 
@@ -1199,7 +1385,7 @@ function applyOtpAuth() {
     const secret = url.searchParams.get("secret");
     if (secret) els.secret.value = secret;
   } catch {
-    els.error.textContent = "otpauth:// 链接格式无效";
+    els.error.textContent = t("invalidOtpAuth");
   }
 }
 
@@ -1261,7 +1447,7 @@ function groupedToken(token) {
   return token.length === 6 ? token.slice(0, 3) + " " + token.slice(3) : token.slice(0, 4) + " " + token.slice(4);
 }
 
-function setIdle(message = "新代码将在 -- 秒后生成") {
+function setIdle(message = t("idle")) {
   els.token.textContent = "--- ---";
   els.token.dataset.copyable = "false";
   els.token.setAttribute("aria-disabled", "true");
@@ -1269,6 +1455,7 @@ function setIdle(message = "新代码将在 -- 秒后生成") {
   els.timerCircle.style.setProperty("--progress", "0%");
   els.timerCircle.setAttribute("aria-valuenow", "0");
   els.next.innerHTML = message;
+  els.endpoint.value = "";
   els.jsonToken.textContent = "------";
 }
 
@@ -1286,7 +1473,7 @@ async function tick() {
     const algorithm = els.algorithm.value;
     const secret = normalizeBase32(els.secret.value);
     if (!Number.isInteger(period) || period < 5 || period > 300) {
-      throw new Error("Period 必须是 5 到 300 秒");
+      throw new Error(t("invalidPeriod"));
     }
 
     const now = Math.floor(Date.now() / 1000);
@@ -1300,23 +1487,34 @@ async function tick() {
     els.timer.textContent = String(remaining);
     els.timerCircle.style.setProperty("--progress", progress + "%");
     els.timerCircle.setAttribute("aria-valuenow", String(progress));
-    els.next.innerHTML = '新代码将在 <b>' + remaining + '</b> 秒后生成';
+    els.next.innerHTML = t("next").replace("{remaining}", String(remaining));
     els.endpoint.value = "/tok/" + secret;
     els.jsonToken.textContent = token;
   } catch (error) {
-    setIdle("新代码将在 -- 秒后生成");
+    setIdle(t("idle"));
     els.error.textContent = error.message || String(error);
   }
 }
 
-function loadFragment() {
+function loadUrlSecret() {
   const match = location.hash.match(/^#\\/tok\\/([^?]+)/);
-  if (!match) return;
+  if (match) {
+    try {
+      els.secret.value = normalizeBase32(decodeURIComponent(match[1]));
+      history.replaceState(null, "", location.pathname + location.search);
+      return;
+    } catch {
+      els.error.textContent = t("invalidFragment");
+    }
+  }
+
+  const directPath = location.pathname.replace(/^\\/+|\\/+$/g, "");
+  if (!directPath || directPath.includes("/") || directPath === "api" || directPath === "tok") return;
+  if (directPath.length < 16) return;
   try {
-    els.secret.value = decodeURIComponent(match[1]);
-    history.replaceState(null, "", location.pathname + location.search);
+    els.secret.value = normalizeBase32(decodeURIComponent(directPath));
   } catch {
-    els.error.textContent = "URL fragment 中的 Secret 编码无效";
+    // Invalid direct paths are handled by the Worker route; keep the UI empty if a stale browser state reaches here.
   }
 }
 
@@ -1332,7 +1530,7 @@ async function copyValue(value, trigger) {
     flashCopied(trigger);
     els.error.textContent = "";
   } catch {
-    els.error.textContent = "复制失败，请手动选择内容";
+    els.error.textContent = t("copyFail");
   }
 }
 
@@ -1349,9 +1547,13 @@ els.token.addEventListener("click", () => {
   const value = (els.token.textContent || "").replace(/\\s/g, "");
   if (/^\\d{6,8}$/.test(value)) copyValue(value, els.token);
 });
+for (const button of els.langButtons) {
+  button.addEventListener("click", () => setLanguage(button.dataset.lang));
+}
 
-loadFragment();
-if (!els.secret.value) els.secret.value = sampleSecret;
+currentLang = detectInitialLanguage();
+loadUrlSecret();
+applyTranslations();
 tick();
 setInterval(tick, 1000);
 `;
@@ -1374,20 +1576,17 @@ function homeHtml(scriptNonce: string): string {
   <header class="topbar">
     <div class="shell topbar-inner">
       <div class="brand"><span class="brand-logo" aria-hidden="true"></span><span><strong>2FA</strong> Worker</span></div>
-      <nav class="nav" aria-label="主导航">
-        <a href="#api">API 文档</a>
-        <a href="#guide">使用指南</a>
-        <a href="#security">安全性</a>
-        <span class="lang" aria-label="语言"><button class="active" type="button">中文</button><button type="button">EN</button></span>
-        <a class="github" href="${GITHUB_REPOSITORY_URL}" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <nav class="nav" aria-label="主导航" data-i18n-label="navLabel">
+        <span class="lang" aria-label="语言" data-i18n-label="langLabel"><button class="active" type="button" data-lang="zh" aria-pressed="true">中文</button><button type="button" data-lang="en" aria-pressed="false">EN</button></span>
+        <a class="github" href="${GITHUB_REPOSITORY_URL}" target="_blank" rel="noopener noreferrer" data-i18n="github">GitHub</a>
       </nav>
     </div>
   </header>
 
   <main class="shell">
     <section class="hero">
-      <h1>即时生成 TOTP 验证码</h1>
-      <p>根据 TOTP 密钥计算 6 位 2FA 验证码。<br>通过快速 JSON API 进行自动化与集成。</p>
+      <h1 data-i18n="heroTitle">即时生成 TOTP 验证码</h1>
+      <p data-i18n-html="heroDesc">根据 TOTP 密钥计算 6 位 2FA 验证码。<br>通过快速 JSON API 进行自动化与集成。</p>
       <div class="hero-assets" aria-hidden="true">
         <img class="hero-asset hero-globe" src="${HERO_GLOBE}" alt="">
         <img class="hero-asset hero-cloudflare" src="${HERO_CLOUDFLARE}" alt="">
@@ -1400,64 +1599,64 @@ function homeHtml(scriptNonce: string): string {
 
     <section class="main-grid">
       <section class="panel">
-        <div class="panel-title"><span class="inline-icon totp-icon" aria-hidden="true"></span>生成 TOTP 验证码</div>
+        <div class="panel-title"><span class="inline-icon totp-icon" aria-hidden="true"></span><span data-i18n="panelTitle">生成 TOTP 验证码</span></div>
         <div class="field">
-          <label for="secret">TOTP 密钥 <span class="help">?</span></label>
-          <div class="input-wrap"><input id="secret" autocomplete="off" spellcheck="false" value="FXPYSQPDSJ5U64X363J3SZXUAPWV5UZY"><button id="copySecret" class="icon-button" type="button" aria-label="复制密钥" title="复制密钥"></button></div>
+          <label for="secret"><span data-i18n="secretLabel">TOTP 密钥</span> <span class="help">?</span></label>
+          <div class="input-wrap"><input id="secret" autocomplete="off" spellcheck="false" value="" placeholder="粘贴 Base32 TOTP 密钥，或打开 /YOUR_SECRET 自动填入" data-i18n-placeholder="secretPlaceholder"><button id="copySecret" class="icon-button" type="button" aria-label="复制密钥" title="复制密钥" data-i18n-title="copySecret"></button></div>
         </div>
         <div class="field">
-          <label for="otpauth">otpauth:// 链接（可选）<span class="help">?</span></label>
-          <div class="input-wrap"><input id="otpauth" autocomplete="off" spellcheck="false" placeholder="otpauth://totp/Example:user@example.com?secret=FXPYSQ..."><button id="copyOtpauth" class="icon-button" type="button" aria-label="复制链接" title="复制链接"></button></div>
+          <label for="otpauth"><span data-i18n="otpauthLabel">otpauth:// 链接（可选）</span><span class="help">?</span></label>
+          <div class="input-wrap"><input id="otpauth" autocomplete="off" spellcheck="false" placeholder="otpauth://totp/Issuer:account?secret=YOUR_SECRET" data-i18n-placeholder="otpauthPlaceholder"><button id="copyOtpauth" class="icon-button" type="button" aria-label="复制链接" title="复制链接" data-i18n-title="copyOtpauth"></button></div>
         </div>
         <input id="digits" type="hidden" value="6">
         <input id="period" type="hidden" value="30">
         <input id="algorithm" type="hidden" value="SHA1">
-        <button id="generate" class="primary" type="button"><span class="button-icon totp-icon" aria-hidden="true"></span>生成验证码</button>
+        <button id="generate" class="primary" type="button"><span class="button-icon totp-icon" aria-hidden="true"></span><span data-i18n="generate">生成验证码</span></button>
         <div class="result-card">
           <div class="result-main">
-            <button id="token" class="token" type="button" aria-live="polite" aria-label="点击复制验证码" title="点击复制验证码" data-copyable="false" aria-disabled="true">--- ---</button>
-            <div id="timerCircle" class="timer" role="progressbar" aria-label="验证码剩余时间" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="timer-inner"><div><span><b id="timer" class="timer-value">--</b>秒</span><span>剩余</span></div></div></div>
+            <button id="token" class="token" type="button" aria-live="polite" aria-label="点击复制验证码" title="点击复制验证码" data-i18n-title="tokenAria" data-copyable="false" aria-disabled="true">--- ---</button>
+            <div id="timerCircle" class="timer" role="progressbar" aria-label="验证码剩余时间" data-i18n-label="timerAria" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="timer-inner"><div><span><b id="timer" class="timer-value">--</b><span data-i18n="seconds">秒</span></span><span data-i18n="remaining">剩余</span></div></div></div>
           </div>
-          <div id="next" class="next">新代码将在 <b>--</b> 秒后生成</div>
+          <div id="next" class="next" data-i18n-html="idle">新代码将在 <b>--</b> 秒后生成</div>
         </div>
         <p id="error" class="error" aria-live="polite"></p>
       </section>
 
       <section id="api" class="panel">
-        <div class="panel-title"><span class="inline-icon code-icon" aria-hidden="true"></span>JSON API</div>
-        <p class="api-desc">以编程方式获取当前 TOTP 验证码。</p>
+        <div class="panel-title"><span class="inline-icon code-icon" aria-hidden="true"></span><span data-i18n="apiTitle">JSON API</span></div>
+        <p class="api-desc" data-i18n="apiDesc">以编程方式获取当前 TOTP 验证码。</p>
         <div class="field">
-          <label for="endpoint">接口地址</label>
-          <div class="input-wrap"><input id="endpoint" readonly value="/tok/FXPYSQPDSJ5U64X363J3SZXUAPWV5UZY"><button id="copyEndpoint" class="icon-button" type="button" aria-label="复制接口" title="复制接口"></button></div>
+          <label for="endpoint" data-i18n="endpointLabel">接口地址</label>
+          <div class="input-wrap"><input id="endpoint" readonly value="" placeholder="输入密钥后自动生成 /tok/YOUR_SECRET" data-i18n-placeholder="endpointPlaceholder"><button id="copyEndpoint" class="icon-button" type="button" aria-label="复制接口" title="复制接口" data-i18n-title="copyEndpoint"></button></div>
         </div>
         <div class="field">
-          <label><span class="label-icon braces-icon" aria-hidden="true"></span>返回结果（application/json）</label>
+          <label><span class="label-icon braces-icon" aria-hidden="true"></span><span data-i18n="returnLabel">返回结果（application/json）</span></label>
           <div class="code-box">
-            <button id="copyJson" class="icon-button" type="button" aria-label="复制 JSON" title="复制 JSON"></button>
+            <button id="copyJson" class="icon-button" type="button" aria-label="复制 JSON" title="复制 JSON" data-i18n-title="copyJson"></button>
             <div class="code-line"><span>1</span><span>{</span></div>
             <div class="code-line"><span>2</span><span>&nbsp;&nbsp;"token": "<span id="jsonToken" class="green">------</span>"</span></div>
             <div class="code-line"><span>3</span><span>}</span></div>
           </div>
         </div>
-        <div class="api-note-box"><span class="inline-icon info-icon" aria-hidden="true">i</span><span>此接口返回 JSON 格式结果，便于与脚本和服务集成。</span></div>
+        <div class="api-note-box"><span class="inline-icon info-icon" aria-hidden="true">i</span><span data-i18n="apiNote">此接口返回 JSON 格式结果，便于与脚本和服务集成。</span></div>
       </section>
     </section>
 
     <section class="feature-grid" id="guide">
-      <div class="feature"><span class="feature-icon" aria-hidden="true"><img class="totp-asset" src="${ICON_TOTP}" alt=""></span><div><h3>即时 TOTP 验证码</h3><p>生成有效的 6 位数字验证码，实时倒计时确保使用时效性。</p></div></div>
-      <div class="feature"><span class="feature-icon" aria-hidden="true"><img class="code-asset" src="${ICON_CODE}" alt=""></span><div><h3>JSON API</h3><p>简单、快速、轻量的 API 设计，适合自动化和集成。</p></div></div>
-      <div class="feature orange"><span class="feature-icon"><img src="${HERO_CLOUDFLARE}" alt=""></span><div><h3>运行在 Cloudflare Workers</h3><p>全球边缘性能，构建速度快，可靠性高。</p></div></div>
-      <div class="feature"><span class="feature-icon" aria-hidden="true"><img class="database-asset" src="${ICON_DATABASE}" alt=""></span><div><h3>无需数据库</h3><p>无状态设计，无需存储、无设置、无需维护。</p></div></div>
+      <div class="feature"><span class="feature-icon" aria-hidden="true"><img class="totp-asset" src="${ICON_TOTP}" alt=""></span><div><h3 data-i18n="featureTotpTitle">即时 TOTP 验证码</h3><p data-i18n="featureTotpText">生成有效的 6 位数字验证码，实时倒计时确保使用时效性。</p></div></div>
+      <div class="feature"><span class="feature-icon" aria-hidden="true"><img class="code-asset" src="${ICON_CODE}" alt=""></span><div><h3 data-i18n="featureApiTitle">JSON API</h3><p data-i18n="featureApiText">简单、快速、轻量的 API 设计，适合自动化和集成。</p></div></div>
+      <div class="feature orange"><span class="feature-icon"><img src="${HERO_CLOUDFLARE}" alt=""></span><div><h3 data-i18n="featureCfTitle">运行在 Cloudflare Workers</h3><p data-i18n="featureCfText">全球边缘性能，构建速度快，可靠性高。</p></div></div>
+      <div class="feature"><span class="feature-icon" aria-hidden="true"><img class="database-asset" src="${ICON_DATABASE}" alt=""></span><div><h3 data-i18n="featureDbTitle">无需数据库</h3><p data-i18n="featureDbText">无状态设计，无需存储、无设置、无需维护。</p></div></div>
     </section>
 
     <section id="security" class="warning">
       <span class="warning-mark" aria-hidden="true"></span>
-      <div><strong>仅用于测试和自动化用途</strong><span>请勿公开泄露生产环境的密钥。您需对密钥的安全性负责。</span></div>
+      <div><strong data-i18n="warningTitle">仅用于测试和自动化用途</strong><span data-i18n="warningText">请勿公开泄露生产环境的密钥。您需对密钥的安全性负责。</span></div>
     </section>
 
     <footer class="footer">
-      <div>© 2025 2FA Worker　·　基于 <a href="https://developers.cloudflare.com/workers/" rel="noreferrer">Cloudflare Workers</a> 构建　·　Web Crypto</div>
-      <div class="footer-links"><a href="#api">API 文档</a><a href="#guide">使用指南</a><a href="#security">安全性</a><a href="${GITHUB_REPOSITORY_URL}" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+      <div class="footer-copy" data-i18n-html="footerCopy"><span class="footer-line">© 2025 2FA Worker</span><span class="footer-line">基于 <a href="https://developers.cloudflare.com/workers/" rel="noreferrer">Cloudflare Workers</a> 构建</span><span class="footer-line">Web Crypto</span></div>
+      <div class="footer-links"><a href="${GITHUB_REPOSITORY_URL}" target="_blank" rel="noopener noreferrer" data-i18n="github">GitHub</a></div>
     </footer>
   </main>
 </div>
@@ -1502,6 +1701,17 @@ async function readJsonBody(request: Request): Promise<Record<string, unknown>> 
   return data as Record<string, unknown>;
 }
 
+function directSecretFromPath(pathname: string): string | null {
+  const raw = pathname.replace(/^\/+|\/+$/g, "");
+  if (!raw || raw.includes("/") || raw === "api" || raw === "tok") return null;
+  if (raw.length < 16) return null;
+  try {
+    return normalizeBase32(decodeURIComponent(raw));
+  } catch {
+    return null;
+  }
+}
+
 function allowedMethods(pathname: string): string[] | null {
   if (
     pathname === "/" ||
@@ -1514,6 +1724,7 @@ function allowedMethods(pathname: string): string[] | null {
     return ["GET", "OPTIONS"];
   }
   if (pathname.startsWith("/tok/")) return ["GET", "OPTIONS"];
+  if (directSecretFromPath(pathname)) return ["GET", "OPTIONS"];
   if (pathname === "/api/totp") return ["GET", "POST", "OPTIONS"];
   return null;
 }
@@ -1541,6 +1752,7 @@ function optionsResponse(methods: string[]): Response {
 async function handleRequest(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const methods = allowedMethods(url.pathname);
+  const directSecret = directSecretFromPath(url.pathname);
 
   if (request.method === "OPTIONS") {
     return methods ? optionsResponse(methods) : jsonResponse({ error: "not found" }, 404);
@@ -1550,7 +1762,7 @@ async function handleRequest(request: Request): Promise<Response> {
     return methodNotAllowed(methods);
   }
 
-  if (url.pathname === "/" && request.method === "GET") {
+  if ((url.pathname === "/" || directSecret) && request.method === "GET") {
     const scriptNonce = nonce();
     return htmlResponse(homeHtml(scriptNonce), scriptNonce);
   }

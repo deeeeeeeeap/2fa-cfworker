@@ -26,6 +26,15 @@ describe("Worker routes", () => {
     expect(body).toContain("JSON API");
     expect(body).toContain("仅用于测试和自动化用途");
     expect(body).toContain("https://github.com/deeeeeeeeap/2fa-cfworker");
+    expect(body).not.toContain("FXPYSQPDSJ5U64X363J3SZXUAPWV5UZY");
+    expect(body).toContain("id=\"secret\" autocomplete=\"off\" spellcheck=\"false\" value=\"\"");
+    expect(body).toContain("id=\"endpoint\" readonly value=\"\"");
+    expect(body).toContain("data-lang=\"zh\"");
+    expect(body).toContain("data-lang=\"en\"");
+    expect(body).toContain("Generate TOTP codes instantly");
+    expect(body).not.toContain("href=\"#api\"");
+    expect(body).not.toContain("href=\"#guide\"");
+    expect(body).not.toContain("href=\"#security\"");
     expect(body).toContain("新代码将在 <b>--</b> 秒后生成");
     expect(body).toContain("rel=\"icon\" type=\"image/png\" sizes=\"192x192\" href=\"/favicon.png\"");
     expect(body).toContain("rel=\"shortcut icon\" type=\"image/png\" href=\"/favicon.ico\"");
@@ -97,6 +106,16 @@ describe("Worker routes", () => {
     expect(body).toEqual({ token: "94287082" });
   });
 
+  it("serves the UI for direct /SECRET convenience paths", async () => {
+    const response = await worker.fetch(request(`/${RFC_SHA1_SECRET_BASE32}`));
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/html");
+    expect(body).toContain("loadUrlSecret");
+    expect(body).not.toContain(`value=\"${RFC_SHA1_SECRET_BASE32}\"`);
+  });
+
   it("returns metadata for GET and POST /api/totp", async () => {
     const getResult = await json(`/api/totp?secret=${RFC_SHA1_SECRET_BASE32}&time=59&digits=8`);
     expect(getResult.body).toMatchObject({
@@ -114,6 +133,20 @@ describe("Worker routes", () => {
       body: JSON.stringify({ secret: RFC_SHA1_SECRET_BASE32, time: 59, digits: 8 }),
     });
     expect(postResult.body).toMatchObject({ token: "94287082", counter: "1" });
+  });
+
+  it("requires an explicit secret for JSON API requests", async () => {
+    const getResult = await json("/api/totp?time=59");
+    expect(getResult.response.status).toBe(400);
+    expect(getResult.body).toEqual({ error: "secret query parameter is required" });
+
+    const postResult = await json("/api/totp", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ time: 59 }),
+    });
+    expect(postResult.response.status).toBe(400);
+    expect(postResult.body).toEqual({ error: "secret is required" });
   });
 
   it("handles malformed and oversized JSON as client errors without echoing secrets", async () => {
