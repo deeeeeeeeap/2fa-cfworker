@@ -366,14 +366,6 @@ button {
 .brand span:last-child {
   color: #0b1a45;
 }
-.result-shield {
-  display: inline-grid;
-  place-items: center;
-  color: #fff;
-  background: linear-gradient(180deg, #2e86ff, #0f5fe8);
-  box-shadow: 0 12px 26px rgba(18, 109, 237, .25);
-  clip-path: polygon(50% 0, 88% 16%, 88% 54%, 50% 100%, 12% 54%, 12% 16%);
-}
 .shield-logo {
   position: relative;
   width: 46px;
@@ -559,15 +551,67 @@ button {
 }
 .icon-button {
   position: absolute;
-  right: 8px;
-  top: 7px;
-  width: 24px;
-  height: 24px;
+  right: 7px;
+  top: 5px;
+  width: 28px;
+  height: 28px;
   border: 0;
   border-radius: 5px;
   background: transparent;
   color: #52617a;
-  font-size: 18px;
+  cursor: pointer;
+  transition: background .16s ease, color .16s ease, transform .16s ease;
+}
+.icon-button:hover,
+.icon-button:focus-visible {
+  background: rgba(18, 104, 238, .09);
+  color: #1268ee;
+  outline: none;
+}
+.icon-button:active {
+  transform: translateY(1px);
+}
+.icon-button::before,
+.icon-button::after {
+  content: "";
+  position: absolute;
+  box-sizing: border-box;
+  border: 1.7px solid currentColor;
+  border-radius: 4px;
+}
+.icon-button::before {
+  left: 9px;
+  top: 6px;
+  width: 12px;
+  height: 14px;
+  background: #fff;
+}
+.icon-button::after {
+  left: 6px;
+  top: 9px;
+  width: 12px;
+  height: 14px;
+  background: transparent;
+}
+.code-box .icon-button::before {
+  background: #101826;
+}
+.icon-button.copied {
+  color: #0f7a46;
+}
+.icon-button.copied::before {
+  left: 8px;
+  top: 8px;
+  width: 13px;
+  height: 8px;
+  border-top: 0;
+  border-right: 0;
+  border-radius: 0;
+  background: transparent;
+  transform: rotate(-45deg);
+}
+.icon-button.copied::after {
+  display: none;
 }
 .primary {
   width: 100%;
@@ -590,21 +634,18 @@ button {
 .result-main {
   min-height: 116px;
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) 96px;
+  grid-template-columns: minmax(0, 1fr) 96px;
   align-items: center;
   gap: 10px;
-  padding: 14px 16px;
-}
-.result-shield {
-  width: 62px;
-  height: 70px;
-  margin-left: 8px;
-  font-size: 31px;
-  color: #1268ee;
-  background: #edf6ff;
-  box-shadow: none;
+  padding: 14px 18px 14px 28px;
 }
 .token {
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  padding: 9px 10px;
+  appearance: none;
+  background: transparent;
   text-align: center;
   color: #1f6fe8;
   font-size: clamp(42px, 4.8vw, 64px);
@@ -613,6 +654,25 @@ button {
   letter-spacing: .12em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  cursor: pointer;
+  transition: background .16s ease, color .16s ease, box-shadow .16s ease;
+}
+.token:hover,
+.token:focus-visible {
+  background: rgba(18, 104, 238, .07);
+  box-shadow: inset 0 0 0 1px rgba(18, 104, 238, .12);
+  outline: none;
+}
+.token[data-copyable="false"] {
+  cursor: default;
+}
+.token[data-copyable="false"]:hover {
+  background: transparent;
+  box-shadow: none;
+}
+.token.copied {
+  color: #0f61d9;
+  background: rgba(18, 104, 238, .10);
 }
 .timer {
   justify-self: end;
@@ -800,7 +860,7 @@ button {
     grid-template-columns: 1fr;
   }
   .result-main {
-    grid-template-columns: 72px minmax(0, 1fr) 78px;
+    grid-template-columns: minmax(0, 1fr) 78px;
   }
   .nav {
     gap: 12px;
@@ -865,10 +925,8 @@ button {
     gap: 12px;
     text-align: center;
   }
-  .result-shield,
   .timer {
     justify-self: center;
-    margin-left: 0;
   }
   .token {
     font-size: clamp(42px, 13vw, 52px);
@@ -901,7 +959,6 @@ const els = {
   generate: document.querySelector("#generate"),
   copySecret: document.querySelector("#copySecret"),
   copyOtpauth: document.querySelector("#copyOtpauth"),
-  copyOtp: document.querySelector("#copyOtp"),
   copyEndpoint: document.querySelector("#copyEndpoint"),
   copyJson: document.querySelector("#copyJson")
 };
@@ -995,11 +1052,12 @@ function groupedToken(token) {
 
 function setIdle(message = "新代码将在 -- 秒后生成") {
   els.token.textContent = "--- ---";
+  els.token.dataset.copyable = "false";
+  els.token.setAttribute("aria-disabled", "true");
   els.timer.textContent = "--";
   els.timerCircle.style.setProperty("--progress", "0%");
   els.timerCircle.setAttribute("aria-valuenow", "0");
   els.next.innerHTML = message;
-  els.copyOtp.disabled = true;
   els.jsonToken.textContent = "------";
 }
 
@@ -1026,11 +1084,12 @@ async function tick() {
     const progress = Math.round((remaining / period) * 100);
     const token = await hotp(secret, BigInt(counter), digits, algorithm);
     els.token.textContent = groupedToken(token);
+    els.token.dataset.copyable = "true";
+    els.token.setAttribute("aria-disabled", "false");
     els.timer.textContent = String(remaining);
     els.timerCircle.style.setProperty("--progress", progress + "%");
     els.timerCircle.setAttribute("aria-valuenow", String(progress));
     els.next.innerHTML = '新代码将在 <b>' + remaining + '</b> 秒后生成';
-    els.copyOtp.disabled = false;
     els.endpoint.value = "/tok/" + secret;
     els.jsonToken.textContent = token;
   } catch (error) {
@@ -1050,10 +1109,17 @@ function loadFragment() {
   }
 }
 
-async function copyValue(value, label) {
+function flashCopied(element) {
+  if (!element) return;
+  element.classList.add("copied");
+  window.setTimeout(() => element.classList.remove("copied"), 850);
+}
+
+async function copyValue(value, trigger) {
   try {
     await navigator.clipboard.writeText(value);
-    els.error.textContent = label + "已复制";
+    flashCopied(trigger);
+    els.error.textContent = "";
   } catch {
     els.error.textContent = "复制失败，请手动选择内容";
   }
@@ -1064,13 +1130,13 @@ for (const el of [els.secret, els.otpauth, els.digits, els.period, els.algorithm
 }
 
 els.generate.addEventListener("click", tick);
-els.copySecret.addEventListener("click", () => copyValue(els.secret.value, "密钥"));
-els.copyOtpauth.addEventListener("click", () => copyValue(els.otpauth.value, "otpauth:// 链接"));
-els.copyEndpoint.addEventListener("click", () => copyValue(els.endpoint.value, "接口地址"));
-els.copyJson.addEventListener("click", () => copyValue('{ "token": "' + els.jsonToken.textContent + '" }', "JSON"));
-els.copyOtp.addEventListener("click", () => {
+els.copySecret.addEventListener("click", (event) => copyValue(els.secret.value, event.currentTarget));
+els.copyOtpauth.addEventListener("click", (event) => copyValue(els.otpauth.value, event.currentTarget));
+els.copyEndpoint.addEventListener("click", (event) => copyValue(els.endpoint.value, event.currentTarget));
+els.copyJson.addEventListener("click", (event) => copyValue('{ "token": "' + els.jsonToken.textContent + '" }', event.currentTarget));
+els.token.addEventListener("click", () => {
   const value = (els.token.textContent || "").replace(/\\s/g, "");
-  if (/^\\d{6,8}$/.test(value)) copyValue(value, "验证码");
+  if (/^\\d{6,8}$/.test(value)) copyValue(value, els.token);
 });
 
 loadFragment();
@@ -1117,11 +1183,11 @@ function homeHtml(scriptNonce: string): string {
         <div class="panel-title"><span class="blue-icon">▣</span>生成 TOTP 验证码</div>
         <div class="field">
           <label for="secret">TOTP 密钥 <span class="help">?</span></label>
-          <div class="input-wrap"><input id="secret" autocomplete="off" spellcheck="false" value="FXPYSQPDSJ5U64X363J3SZXUAPWV5UZY"><button id="copySecret" class="icon-button" type="button" aria-label="复制密钥">▢</button></div>
+          <div class="input-wrap"><input id="secret" autocomplete="off" spellcheck="false" value="FXPYSQPDSJ5U64X363J3SZXUAPWV5UZY"><button id="copySecret" class="icon-button" type="button" aria-label="复制密钥" title="复制密钥"></button></div>
         </div>
         <div class="field">
           <label for="otpauth">otpauth:// 链接（可选）<span class="help">?</span></label>
-          <div class="input-wrap"><input id="otpauth" autocomplete="off" spellcheck="false" placeholder="otpauth://totp/Example:user@example.com?secret=FXPYSQ..."><button id="copyOtpauth" class="icon-button" type="button" aria-label="复制链接">▢</button></div>
+          <div class="input-wrap"><input id="otpauth" autocomplete="off" spellcheck="false" placeholder="otpauth://totp/Example:user@example.com?secret=FXPYSQ..."><button id="copyOtpauth" class="icon-button" type="button" aria-label="复制链接" title="复制链接"></button></div>
         </div>
         <input id="digits" type="hidden" value="6">
         <input id="period" type="hidden" value="30">
@@ -1129,14 +1195,12 @@ function homeHtml(scriptNonce: string): string {
         <button id="generate" class="primary" type="button">↯ 生成验证码</button>
         <div class="result-card">
           <div class="result-main">
-            <span class="result-shield">✓</span>
-            <div id="token" class="token" aria-live="polite">--- ---</div>
+            <button id="token" class="token" type="button" aria-live="polite" aria-label="点击复制验证码" title="点击复制验证码" data-copyable="false" aria-disabled="true">--- ---</button>
             <div id="timerCircle" class="timer" role="progressbar" aria-label="验证码剩余时间" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="timer-inner"><div><span><b id="timer" class="timer-value">--</b>秒</span><span>剩余</span></div></div></div>
           </div>
           <div id="next" class="next">新代码将在 <b>--</b> 秒后生成</div>
         </div>
         <p id="error" class="error" aria-live="polite"></p>
-        <button id="copyOtp" type="button" hidden disabled>复制验证码</button>
       </section>
 
       <section id="api" class="panel">
@@ -1144,12 +1208,12 @@ function homeHtml(scriptNonce: string): string {
         <p class="api-desc">以编程方式获取当前 TOTP 验证码。</p>
         <div class="field">
           <label for="endpoint">接口地址</label>
-          <div class="input-wrap"><input id="endpoint" readonly value="/tok/FXPYSQPDSJ5U64X363J3SZXUAPWV5UZY"><button id="copyEndpoint" class="icon-button" type="button" aria-label="复制接口">▢</button></div>
+          <div class="input-wrap"><input id="endpoint" readonly value="/tok/FXPYSQPDSJ5U64X363J3SZXUAPWV5UZY"><button id="copyEndpoint" class="icon-button" type="button" aria-label="复制接口" title="复制接口"></button></div>
         </div>
         <div class="field">
           <label>返回结果（application/json）</label>
           <div class="code-box">
-            <button id="copyJson" class="icon-button" type="button" aria-label="复制 JSON">▢</button>
+            <button id="copyJson" class="icon-button" type="button" aria-label="复制 JSON" title="复制 JSON"></button>
             <div class="code-line"><span>1</span><span>{</span></div>
             <div class="code-line"><span>2</span><span>&nbsp;&nbsp;"token": "<span id="jsonToken" class="green">------</span>"</span></div>
             <div class="code-line"><span>3</span><span>}</span></div>
