@@ -41,6 +41,8 @@ type TotpResult = {
   token: string;
   period: number;
   remaining: number;
+  remainingMs: number;
+  validUntil: string;
   digits: number;
   algorithm: TotpAlgorithm;
   counter: string;
@@ -96,6 +98,7 @@ const COMMON_HEADERS: Record<string, string> = {
   "Cross-Origin-Resource-Policy": "same-origin",
   "Origin-Agent-Cluster": "?1",
   "Permissions-Policy": "clipboard-write=(self)",
+  "X-Robots-Tag": "noindex, nofollow",
 };
 
 function securityHeaders(contentType: string, cacheControl: string, nonce?: string): Headers {
@@ -142,7 +145,7 @@ function textResponse(body: string, status = 200): Response {
 function htmlResponse(body: string, nonce: string, status = 200): Response {
   return new Response(body, {
     status,
-    headers: securityHeaders("text/html; charset=utf-8", "public, max-age=300, must-revalidate", nonce),
+    headers: securityHeaders("text/html; charset=utf-8", "no-store, max-age=0", nonce),
   });
 }
 
@@ -322,11 +325,15 @@ async function generateTotp(secret: string, options: TotpOptions = {}): Promise<
   const token = await hotp(key, counter, digits, algorithm);
   const elapsed = (unixSeconds - t0) % period;
   const remaining = period - elapsed;
+  const elapsedMs = (timestampMs - t0 * 1000) % (period * 1000);
+  const remainingMs = period * 1000 - elapsedMs;
 
   return {
     token,
     period,
     remaining,
+    remainingMs,
+    validUntil: new Date(timestampMs + remainingMs).toISOString(),
     digits,
     algorithm,
     counter: counter.toString(),
@@ -675,6 +682,11 @@ button {
   opacity: 1;
   outline: none;
 }
+.lang button:focus-visible,
+.primary:focus-visible {
+  outline: 3px solid rgba(18, 104, 238, .28);
+  outline-offset: 3px;
+}
 .icon-button:active {
   transform: translateY(1px);
 }
@@ -871,6 +883,17 @@ button {
   color: #40516f;
   background: #f4f9ff;
   line-height: 1.5;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .feature-grid {
   display: grid;
@@ -1238,6 +1261,7 @@ const els = {
   endpoint: document.querySelector("#endpoint"),
   jsonToken: document.querySelector("#jsonToken"),
   error: document.querySelector("#error"),
+  status: document.querySelector("#status"),
   generate: document.querySelector("#generate"),
   copySecret: document.querySelector("#copySecret"),
   copyOtpauth: document.querySelector("#copyOtpauth"),
@@ -1268,13 +1292,13 @@ const i18n = {
     idle: "新代码将在 <b>--</b> 秒后生成",
     next: "新代码将在 <b>{remaining}</b> 秒后生成",
     apiTitle: "JSON API",
-    apiDesc: "以编程方式获取当前 TOTP 验证码。",
+    apiDesc: "推荐使用 POST /api/totp 获取当前 TOTP 验证码。",
     endpointLabel: "接口地址",
     endpointPlaceholder: "输入密钥后自动生成 /tok/YOUR_SECRET",
     copyEndpoint: "复制接口",
     returnLabel: "返回结果（application/json）",
     copyJson: "复制 JSON",
-    apiNote: "此接口返回 JSON 格式结果，便于与脚本和服务集成。",
+    apiNote: "POST /api/totp 更适合自动化；URL secret 接口仅建议用于兼容旧工具或临时测试。",
     featureTotpTitle: "即时 TOTP 验证码",
     featureTotpText: "生成有效的 6 位数字验证码，实时倒计时确保使用时效性。",
     featureApiTitle: "JSON API",
@@ -1293,6 +1317,7 @@ const i18n = {
     invalidUrlEncoding: "Secret URL 编码无效",
     invalidOtpAuth: "otpauth:// 链接格式无效",
     invalidPeriod: "Period 必须是 5 到 300 秒",
+    copySuccess: "已复制到剪贴板",
     copyFail: "复制失败，请手动选择内容",
     invalidFragment: "URL fragment 中的 Secret 编码无效"
   },
@@ -1317,13 +1342,13 @@ const i18n = {
     idle: "Next code will be generated in <b>--</b> seconds",
     next: "Next code will be generated in <b>{remaining}</b> seconds",
     apiTitle: "JSON API",
-    apiDesc: "Get the current TOTP code programmatically.",
+    apiDesc: "Use POST /api/totp for automated TOTP code retrieval.",
     endpointLabel: "Endpoint",
     endpointPlaceholder: "Generated after entering a secret: /tok/YOUR_SECRET",
     copyEndpoint: "Copy endpoint",
     returnLabel: "Response (application/json)",
     copyJson: "Copy JSON",
-    apiNote: "This endpoint returns JSON so scripts and services can integrate easily.",
+    apiNote: "POST /api/totp is preferred for automation; URL-secret endpoints are for compatibility or temporary testing only.",
     featureTotpTitle: "Instant TOTP code",
     featureTotpText: "Generate a valid 6-digit code with a live countdown for timing confidence.",
     featureApiTitle: "JSON API",
@@ -1342,6 +1367,7 @@ const i18n = {
     invalidUrlEncoding: "Secret URL encoding is invalid",
     invalidOtpAuth: "otpauth:// link format is invalid",
     invalidPeriod: "Period must be between 5 and 300 seconds",
+    copySuccess: "Copied to clipboard",
     copyFail: "Copy failed. Please select the text manually.",
     invalidFragment: "Secret encoding in the URL fragment is invalid"
   }
@@ -1564,6 +1590,7 @@ async function copyValue(value, trigger) {
     await navigator.clipboard.writeText(value);
     flashCopied(trigger);
     els.error.textContent = "";
+    els.status.textContent = t("copySuccess");
   } catch {
     els.error.textContent = t("copyFail");
   }
@@ -1654,7 +1681,8 @@ function homeHtml(scriptNonce: string): string {
           </div>
           <div id="next" class="next" data-i18n-html="idle">新代码将在 <b>--</b> 秒后生成</div>
         </div>
-        <p id="error" class="error" aria-live="polite"></p>
+        <p id="error" class="error" role="alert" aria-live="assertive"></p>
+        <p id="status" class="sr-only" aria-live="polite" aria-atomic="true"></p>
       </section>
 
       <section id="api" class="panel">

@@ -4,12 +4,22 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-06-08",
   "workers_dev": true,
+  "logpush": false,
 
   // This Worker handles TOTP secrets in compatibility URLs (/tok/<secret>).
-  // Keep persisted observability off unless you have confirmed URL/query/body
-  // fields are not stored or exported in your Cloudflare account pipeline.
+  // Keep persisted observability and invocation logs off unless you have
+  // confirmed URL/query/body fields are not stored or exported anywhere.
   "observability": {
-    "enabled": false
+    "enabled": false,
+    "logs": {
+      "enabled": false,
+      "invocation_logs": false,
+      "persist": false
+    },
+    "traces": {
+      "enabled": false,
+      "persist": false
+    }
   }
 
   // Production custom domain example:

@@ -2,6 +2,7 @@ node_modules/
 .wrangler/
 .scratch/
 dist/
+bundled/
 coverage/
 *.log
 .env*

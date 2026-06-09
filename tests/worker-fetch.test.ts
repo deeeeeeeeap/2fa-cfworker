@@ -13,15 +13,22 @@ async function json(path: string, init?: RequestInit): Promise<{ body: any; resp
 }
 
 describe("Worker routes", () => {
-  it("serves the local-browser UI with cacheable HTML and CSP", async () => {
+  it("serves the local-browser UI with uncached nonce HTML and CSP", async () => {
     const response = await worker.fetch(request("/"));
     const body = await response.text();
+    const csp = response.headers.get("content-security-policy") ?? "";
+    const nonce = csp.match(/script-src 'self' 'nonce-([^']+)'/)?.[1];
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/html");
-    expect(response.headers.get("cache-control")).toContain("public");
-    expect(response.headers.get("content-security-policy")).toMatch(/script-src 'self' 'nonce-[^']+'/);
-    expect(response.headers.get("content-security-policy")).toContain("object-src 'none'");
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(response.headers.get("pragma")).toBe("no-cache");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+    expect(csp).toContain("default-src 'self'");
+    expect(csp).toContain("object-src 'none'");
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(nonce).toBeTruthy();
+    expect(body).toContain(`<script nonce="${nonce}">`);
     expect(body).toContain("即时生成 TOTP 验证码");
     expect(body).toContain("JSON API");
     expect(body).toContain("仅用于测试和自动化用途");
@@ -46,6 +53,8 @@ describe("Worker routes", () => {
     expect(body).toContain("class=\"hero-asset hero-dot-large\"");
     expect(body).toContain("id=\"token\" class=\"token\" type=\"button\"");
     expect(body).toContain("aria-label=\"点击复制验证码\"");
+    expect(body).toContain("role=\"alert\" aria-live=\"assertive\"");
+    expect(body).toContain("id=\"status\" class=\"sr-only\" aria-live=\"polite\" aria-atomic=\"true\"");
     expect(body).toContain("class=\"inline-icon totp-icon\"");
     expect(body).toContain("class=\"inline-icon code-icon\"");
     expect(body).toContain("class=\"button-icon totp-icon\"");
@@ -69,7 +78,7 @@ describe("Worker routes", () => {
     expect(body).not.toContain("mix-blend-mode");
     expect(body).not.toContain("result-shield");
     expect(body).not.toContain("id=\"copyOtp\"");
-    expect(body).not.toContain("已复制");
+    expect(body).not.toContain("copied-toast");
     expect(body).not.toContain("result-meta");
     expect(body).not.toContain("meta-cell");
     expect(body).not.toContain("颁发者示例");
@@ -103,6 +112,7 @@ describe("Worker routes", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
     expect(body).toEqual({ token: "94287082" });
   });
 
@@ -112,16 +122,21 @@ describe("Worker routes", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/html");
+    expect(response.headers.get("cache-control")).toContain("no-store");
     expect(body).toContain("loadUrlSecret");
     expect(body).not.toContain(`value=\"${RFC_SHA1_SECRET_BASE32}\"`);
   });
 
   it("returns metadata for GET and POST /api/totp", async () => {
     const getResult = await json(`/api/totp?secret=${RFC_SHA1_SECRET_BASE32}&time=59&digits=8`);
+    expect(getResult.response.headers.get("cache-control")).toContain("no-store");
+    expect(getResult.response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
     expect(getResult.body).toMatchObject({
       token: "94287082",
       period: 30,
       remaining: 1,
+      remainingMs: 1000,
+      validUntil: "1970-01-01T00:01:00.000Z",
       digits: 8,
       algorithm: "SHA1",
       counter: "1",
@@ -132,7 +147,14 @@ describe("Worker routes", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ secret: RFC_SHA1_SECRET_BASE32, time: 59, digits: 8 }),
     });
-    expect(postResult.body).toMatchObject({ token: "94287082", counter: "1" });
+    expect(postResult.response.headers.get("cache-control")).toContain("no-store");
+    expect(postResult.response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+    expect(postResult.body).toMatchObject({
+      token: "94287082",
+      counter: "1",
+      remainingMs: 1000,
+      validUntil: "1970-01-01T00:01:00.000Z",
+    });
   });
 
   it("requires an explicit secret for JSON API requests", async () => {
