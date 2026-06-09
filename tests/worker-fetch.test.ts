@@ -30,6 +30,10 @@ describe("Worker routes", () => {
     expect(body).toContain("class=\"cf-logo\"");
     expect(body).not.toContain("● GitHub");
     expect(body).not.toContain("class=\"globe\"");
+    expect(body).not.toContain("hero-art left");
+    expect(body).not.toContain("class=\"dots\"");
+    expect(body).not.toContain("class=\"cloud");
+    expect(body).not.toContain("hero-shield");
     expect(body).not.toContain("mix-blend-mode");
     expect(body).not.toContain("result-meta");
     expect(body).not.toContain("meta-cell");

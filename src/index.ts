@@ -366,7 +366,6 @@ button {
 .brand span:last-child {
   color: #0b1a45;
 }
-.hero-shield,
 .result-shield {
   display: inline-grid;
   place-items: center;
@@ -470,71 +469,15 @@ button {
   pointer-events: none;
   opacity: .95;
 }
-.hero-art.left {
-  left: -28px;
-  top: 55px;
-  width: 280px;
-  height: 150px;
-}
 .hero-art.right {
-  right: -8px;
+  right: 32px;
   top: 72px;
-  width: 270px;
+  width: 180px;
   height: 130px;
-}
-.dots {
-  position: absolute;
-  left: 0;
-  bottom: 15px;
-  width: 116px;
-  height: 76px;
-  background-image: radial-gradient(#8cc3ff 1.6px, transparent 1.8px);
-  background-size: 12px 12px;
-  opacity: .7;
-}
-.cloud {
-  position: absolute;
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(230, 242, 255, .96), rgba(205, 228, 252, .72));
-}
-.cloud.c1 { width: 190px; height: 58px; left: 84px; bottom: 12px; }
-.cloud.c2 { width: 86px; height: 86px; left: 162px; bottom: 20px; }
-.cloud.c3 { width: 124px; height: 124px; left: 196px; bottom: -18px; }
-.hero-shield {
-  position: absolute;
-  left: 78px;
-  top: 16px;
-  width: 70px;
-  height: 82px;
-  font-size: 0;
-  color: #fff;
-  background: linear-gradient(90deg, rgba(58, 132, 239, .42) 0 50%, rgba(138, 184, 249, .42) 50% 100%);
-  box-shadow: none;
-}
-.hero-shield::before {
-  content: "";
-  position: absolute;
-  left: 24px;
-  top: 39px;
-  width: 22px;
-  height: 22px;
-  border: 4px solid rgba(255, 255, 255, .92);
-  border-radius: 50%;
-  box-sizing: border-box;
-}
-.hero-shield::after {
-  content: "";
-  position: absolute;
-  left: 33px;
-  top: 25px;
-  width: 4px;
-  height: 44px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .82);
 }
 .cf-logo {
   position: absolute;
-  right: -2px;
+  right: 0;
   bottom: 4px;
   width: 154px;
   height: auto;
@@ -1162,9 +1105,6 @@ function homeHtml(scriptNonce: string): string {
 
   <main class="shell">
     <section class="hero">
-      <div class="hero-art left" aria-hidden="true">
-        <span class="dots"></span><span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span><span class="hero-shield"></span>
-      </div>
       <div class="hero-art right" aria-hidden="true">
         <img class="cf-logo" src="${CLOUDFLARE_MARK}" alt="">
       </div>
