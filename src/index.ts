@@ -402,13 +402,13 @@ button {
   margin: 0 auto;
 }
 .topbar {
-  height: 112px;
+  height: 92px;
   border-top: 1px solid #d9e2ee;
   border-bottom: 1px solid #dfe8f4;
   background: #fff;
 }
 .topbar-inner {
-  width: min(1946px, calc(100vw - 102px));
+  width: min(1184px, calc(100vw - 64px));
   height: 100%;
   display: flex;
   align-items: center;
@@ -417,8 +417,8 @@ button {
 .brand {
   display: flex;
   align-items: center;
-  gap: 16px;
-  font-size: 36px;
+  gap: 12px;
+  font-size: 30px;
   font-weight: 800;
   letter-spacing: -.03em;
 }
@@ -429,19 +429,19 @@ button {
   color: #0b1a45;
 }
 .brand-logo {
-  width: 64px;
-  height: 64px;
+  width: 52px;
+  height: 52px;
   flex: 0 0 auto;
-  border-radius: 13px;
+  border-radius: 12px;
   background: url("${APP_ICON}") center / cover no-repeat;
   box-shadow: 0 12px 24px rgba(18, 109, 237, .16);
 }
 .nav {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 24px;
   color: #081a45;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
 }
 .nav a {
@@ -461,10 +461,10 @@ button {
   background: #fff;
 }
 .lang button {
-  min-width: 88px;
+  min-width: 72px;
   min-height: 44px;
   border: 0;
-  padding: 13px 20px;
+  padding: 11px 18px;
   background: transparent;
   color: #0b1b3d;
   font-weight: 800;
@@ -707,11 +707,11 @@ button {
 .icon-button::before {
   content: "";
   position: absolute;
-  inset: 3px;
+  inset: 11px;
   background-image: url("${ICON_COPY}");
   background-position: center;
   background-repeat: no-repeat;
-  background-size: contain;
+  background-size: 22px 22px;
 }
 .icon-button.copied {
   background: rgba(18, 104, 238, .12);
@@ -1044,23 +1044,23 @@ button {
     padding-top: 0;
   }
   .topbar {
-    height: 108px;
+    height: 88px;
     border-top: 0;
   }
   .topbar-inner {
-    width: min(1184px, calc(100vw - 48px));
+    width: min(1184px, calc(100vw - 52px));
   }
   .brand {
-    gap: 12px;
-    font-size: 26px;
+    gap: 11px;
+    font-size: 25px;
   }
   .brand-logo {
-    width: 46px;
-    height: 46px;
+    width: 44px;
+    height: 44px;
     border-radius: 10px;
   }
   .nav {
-    gap: 28px;
+    gap: 22px;
     font-size: 16px;
   }
   .lang {
@@ -1122,6 +1122,10 @@ button {
 @media (max-width: 960px) {
   .topbar {
     height: auto;
+    padding: 12px 0;
+  }
+  .topbar-inner {
+    min-height: 56px;
   }
   .hero {
     min-height: 0;
@@ -1162,7 +1166,7 @@ button {
     width: min(100% - 24px, 1184px);
   }
   .topbar {
-    padding: 14px 0;
+    padding: 12px 0;
   }
   .topbar-inner,
   .nav,
