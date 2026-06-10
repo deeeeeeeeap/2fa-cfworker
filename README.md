@@ -120,7 +120,7 @@ npx wrangler login
 
 ```jsonc
 {
-  "name": "totp-worker",
+  "name": "2fa-cfworker",
   "main": "src/index.ts",
   "compatibility_date": "2026-06-08",
   "workers_dev": true
@@ -145,7 +145,7 @@ npm run deploy
 部署成功后，默认会发布到：
 
 ```text
-https://totp-worker.<your-subdomain>.workers.dev/
+https://2fa-cfworker.<your-subdomain>.workers.dev/
 ```
 
 ## 通过 GitHub + Cloudflare Workers Builds 部署
@@ -173,7 +173,7 @@ Cloudflare Dashboard 推荐配置：
 4. 确认 `wrangler.jsonc` 中的 `name` 与 Cloudflare Worker 名称一致。
 5. 保存并部署。后续推送到 `main` 会触发自动构建和部署。
 
-> 注意：`wrangler.jsonc` 默认 Worker 名为 `totp-worker`。如果你在 Cloudflare Dashboard 中创建的是 `2fa-cfworker` 或其他名称，请先把 `wrangler.jsonc` 的 `name` 改成同名后再部署。
+> 注意：`wrangler.jsonc` 的 Worker 名为 `2fa-cfworker`，与 Cloudflare Dashboard 中的 Worker 名称保持一致。如果你的 Dashboard Worker 使用其他名称，请先把 `wrangler.jsonc` 的 `name` 改成同名后再部署。
 
 ## 自定义域名
 
