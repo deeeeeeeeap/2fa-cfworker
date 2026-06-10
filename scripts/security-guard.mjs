@@ -1,6 +1,11 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
-const files = ["src/index.ts"];
+const srcDir = "src";
+const files = readdirSync(srcDir, { recursive: true })
+  .filter((entry) => entry.endsWith(".ts"))
+  .map((entry) => join(srcDir, entry))
+  .sort();
 
 const bannedPatterns = [
   {

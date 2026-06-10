@@ -1,6 +1,7 @@
 node_modules/
 .wrangler/
 .scratch/
+.playwright-cli/
 dist/
 bundled/
 coverage/

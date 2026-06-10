@@ -1,4 +1,14 @@
-// Standalone RFC 6238 vector check. Run with: node scripts/check-vectors.mjs
+/*
+ * Standalone RFC 6238 vector check. Run with: node scripts/check-vectors.mjs
+ *
+ * This is an INDEPENDENT reference implementation: it imports nothing from
+ * src/ and re-implements Base32 decoding, HOTP, and TOTP from scratch. It
+ * exists to cross-validate the RFC 6238 test vectors against the product
+ * code — two separately written implementations must both reproduce the
+ * official vectors, so a bug shared by the product code and its tests cannot
+ * pass unnoticed. Vector tests that exercise the product code itself live in
+ * tests/totp.test.ts.
+ */
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const hashName = { SHA1: 'SHA-1', SHA256: 'SHA-256', SHA512: 'SHA-512' };
 function base32ToBytes(input) {

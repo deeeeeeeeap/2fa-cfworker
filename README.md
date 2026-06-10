@@ -4,10 +4,12 @@
 
 ## 特性
 
-- Cloudflare Worker 单文件运行，无数据库、无 KV、无持久化存储依赖。
-- 首页提供蓝白风格 TOTP 生成 UI，支持实时验证码、倒计时、接口预览和复制。
+- Cloudflare Worker 无状态运行，无数据库、无 KV、无持久化存储依赖。
+- 模块化结构：`src/totp-core.ts`（TOTP/HOTP 算法与校验）、`src/page.ts`（首页 UI 模板）、`src/assets.ts`（favicon 资源）、`src/index.ts`（HTTP 路由层）。
+- 首页为「时间仪器」风格 TOTP 生成 UI：深浅双主题（跟随系统 + 手动切换）、SVG 轨道时钟插画、逐位验证码单元格与平滑倒计时环；除 favicon 外全部视觉资产为内联 SVG，无外部字体/脚本/图片。
 - 支持 `SHA1`、`SHA256`、`SHA512`，验证码位数支持 6-8 位。
-- 首页 HTML 与 API 响应默认 `no-store`，HTML 响应带 CSP nonce 与常见安全响应头。
+- 内置每 IP 限流：`/api/totp` 与 `/tok/*` 默认 20 次 / 10 秒，超限返回 `429`，阈值可在 `wrangler.jsonc` 调整。
+- 首页 HTML 与 API 响应默认 `no-store`，HTML 响应带 CSP nonce（script + style）、HSTS 与常见安全响应头；所有 `GET` 路由同时支持 `HEAD`。
 - `wrangler.jsonc` 默认关闭 persisted observability、invocation logs 和 Logpush，降低 URL 中 TOTP secret 被记录的风险。
 - 内置 RFC 测试向量、路由测试、TypeScript 检查、Wrangler dry-run 和 bundle gzip size budget。
 
@@ -16,11 +18,12 @@
 | Method | Path | 说明 |
 | --- | --- | --- |
 | `GET` | `/` | 浏览器 TOTP UI |
-| `GET` | `/tok/<BASE32_SECRET>` | 兼容 `2fa.live` 风格，返回 `{"token":"123456"}`；仅建议兼容旧工具或临时测试 |
+| `GET` | `/tok/<BASE32_SECRET>` | 兼容 `2fa.live` 风格，返回 `{"token":"123456"}`；仅作兼容旧工具或临时测试用途 |
 | `GET` | `/api/totp?secret=<BASE32_SECRET>` | 返回 token、剩余秒数、算法、周期等 metadata；URL secret 仅建议临时使用 |
 | `POST` | `/api/totp` | 推荐的 JSON API，更适合自动化集成，body 示例见下方 |
 | `GET` | `/healthz` | 健康检查，返回 `{"ok":true}` |
 | `GET` | `/robots.txt` | 禁止爬虫索引 |
+| `GET` | `/favicon.ico`、`/favicon.png`、`/apple-touch-icon.png` | favicon 图片路由，响应可缓存（页面其余视觉资产为内联 SVG） |
 
 POST 示例：
 
@@ -85,8 +88,7 @@ npm run check
 - `npm run test`
 - `node scripts/check-vectors.mjs`
 - `npm run security`
-- `npm run deploy:dry-run`
-- `npm run size`
+- `npm run size`（内部会执行 `wrangler deploy --dry-run`）
 
 检查 bundle gzip 体积预算：
 
@@ -94,10 +96,10 @@ npm run check
 npm run size
 ```
 
-默认 gzip budget 为 `512 KiB`，可用环境变量调整：
+默认 gzip budget 为 `64 KiB`，可用环境变量调整：
 
 ```bash
-MAX_GZIP_KIB=768 npm run size
+MAX_GZIP_KIB=128 npm run size
 ```
 
 远端开发模式更接近 Cloudflare 边缘运行环境：
@@ -192,10 +194,11 @@ Cloudflare Dashboard 推荐配置：
 
 - 优先使用首页 UI 或 `POST /api/totp`。
 - `/tok/<secret>` 和 `GET /api/totp?secret=...` 会把 secret 放在 URL 中，只建议兼容旧工具或临时测试。
+- 浏览器自动填入请使用 `/#/tok/<secret>` fragment 形式：fragment 不会发送到服务器，页面读取后会自动清理地址栏；此前的 `/<secret>` 裸路径已移除。
 - 不要开启会记录 URL path、query、body、decoded secret 或 generated token 的日志、分析、追踪、Logpush 或第三方可观测性管道。
 - `wrangler.jsonc` 默认关闭 persisted observability、invocation logs、trace persistence 和 Logpush；如果你确认自己的日志管道不会保存敏感字段，再按需开启。
 - 不需要 Cloudflare KV、D1、R2 或其他数据库绑定。
-- 公开部署建议在 Cloudflare Dashboard 为 `/api/totp` 和 `/tok/*` 配置 WAF / Rate Limiting；如果仅自用，建议考虑 Cloudflare Access。
+- 代码已内置 Rate Limiting binding（每 IP 20 次 / 10 秒，每个 Cloudflare 节点独立计数）；公开部署仍必须在 Cloudflare Dashboard 为 `/api/totp` 和 `/tok/*` 叠加 WAF / Rate Limiting 与用量告警；如果仅自用，建议考虑 Cloudflare Access。
 
 ### 生产日志隐私检查清单
 
@@ -251,14 +254,20 @@ curl -i -X POST "http://127.0.0.1:8787/api/totp" \
 
 ```text
 .
-├── src/index.ts                 # Worker 入口、TOTP 算法、API、首页 UI
-├── tests/                       # Vitest 路由与 TOTP 测试
-├── scripts/check-vectors.mjs    # RFC 测试向量检查
+├── src/index.ts                  # Worker 入口：HTTP 路由、安全响应头、限流
+├── src/totp-core.ts              # TOTP/HOTP 算法与输入校验
+├── src/page.ts                   # 首页 UI 模板（主题系统、CSS、客户端 JS、内联 SVG、HTML）
+├── src/assets.ts                 # favicon 资源与图片路由映射
+├── tests/                        # Vitest 路由、TOTP、客户端漂移与隐私配置测试
+├── scripts/check-vectors.mjs     # RFC 测试向量交叉验证（独立参考实现）
+├── scripts/security-guard.mjs    # 日志隐私静态检查
 ├── scripts/size-budget-check.mjs # Wrangler dry-run gzip size budget
 ├── .github/workflows/ci.yml      # GitHub Actions CI
-├── wrangler.jsonc               # Cloudflare Workers 配置
-├── package.json                 # npm scripts 与 devDependencies
-└── SECURITY.md                  # 安全使用说明
+├── .github/dependabot.yml        # 依赖每周更新
+├── vitest.config.ts              # 测试池配置（CI 在 workerd 运行时执行）
+├── wrangler.jsonc                # Cloudflare Workers 配置（含 Rate Limiting binding）
+├── package.json                  # npm scripts 与 devDependencies
+└── SECURITY.md                   # 安全使用说明
 ```
 
 ## 常用命令

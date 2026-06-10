@@ -16,9 +16,10 @@
     "size": "node scripts/size-budget-check.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run typecheck && npm run test && node scripts/check-vectors.mjs && npm run security && npm run deploy:dry-run && npm run size"
+    "check": "npm run typecheck && npm run test && node scripts/check-vectors.mjs && npm run security && npm run size"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.16.14",
     "typescript": "6.0.3",
     "vitest": "4.1.8",
     "wrangler": "4.98.0"

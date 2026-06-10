@@ -10,8 +10,9 @@ Required operational practices:
 4. Keep `Cache-Control: no-store` on all HTML, API, and token responses while inline CSP nonce scripts are used.
 5. Use a custom domain over HTTPS; Cloudflare Workers provides HTTPS for workers.dev and custom domains, but production should use a domain you control.
 6. Disable or restrict any observability/export pipeline that would store full paths or request bodies.
-7. Use Cloudflare WAF, Rate Limiting, or Cloudflare Access for public deployments.
+7. The code ships with a built-in per-IP rate limiting binding (see `ratelimits` in `wrangler.jsonc`); public deployments must still layer Cloudflare WAF / Rate Limiting rules and usage alerts on top in the Dashboard.
 8. Keep `X-Robots-Tag: noindex, nofollow, noarchive` on HTML, API, token, and error responses.
+9. For browser auto-fill, use the fragment form `/#/tok/<secret>`: the fragment is never sent to the server, and the page clears it from the address bar after reading it. The former `/<secret>` bare-path route has been removed.
 
 Deployment default:
 

@@ -1,7 +1,7 @@
 import { rmSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
-const maxGzipKiB = Number(process.env.MAX_GZIP_KIB ?? "512");
+const maxGzipKiB = Number(process.env.MAX_GZIP_KIB ?? "64");
 const outdir = "bundled";
 const command = process.platform === "win32" ? "cmd.exe" : "npx";
 const args =

@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -21,5 +28,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Typecheck, tests, vectors, security guard, Wrangler dry-run, size budget
+      - name: Typecheck, tests, vectors, security guard, size budget
         run: npm run check
+        env:
+          # Run worker tests inside the real workerd runtime (see vitest.config.ts).
+          VITEST_WORKERS_POOL: "1"

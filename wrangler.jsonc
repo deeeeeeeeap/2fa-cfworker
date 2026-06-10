@@ -6,6 +6,20 @@
   "workers_dev": true,
   "logpush": false,
 
+  // Best-effort per-IP rate limiting for /api/totp and /tok/* (per colo).
+  // Public deployments should additionally configure WAF rate limiting rules
+  // and usage alerts in the Cloudflare dashboard.
+  "ratelimits": [
+    {
+      "name": "TOTP_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": {
+        "limit": 20,
+        "period": 10
+      }
+    }
+  ],
+
   // This Worker handles TOTP secrets in compatibility URLs (/tok/<secret>).
   // Keep persisted observability and invocation logs off unless you have
   // confirmed URL/query/body fields are not stored or exported anywhere.
