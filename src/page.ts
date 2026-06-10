@@ -284,10 +284,10 @@ button { cursor: pointer; }
 .hero {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(300px, 40%, 470px);
+  grid-template-columns: minmax(0, 1fr) clamp(320px, 42%, 500px);
   align-items: center;
-  gap: 26px;
-  padding: 70px 0 46px;
+  gap: 30px;
+  padding: 56px 0 40px;
 }
 .hero-badge {
   display: inline-flex;
@@ -352,14 +352,13 @@ button { cursor: pointer; }
   to { transform: translateY(8px); }
 }
 .hero-orbit .orbit,
-.hero-orbit .hand-min {
+.hero-orbit .hand {
   transform-origin: 50% 50%;
   transform-box: view-box;
 }
 .hero-orbit .orbit-a { animation: spin 72s linear infinite; }
 .hero-orbit .orbit-b { animation: spin 48s linear infinite reverse; }
 .hero-orbit .orbit-c { animation: spin 96s linear infinite; }
-.hero-orbit .hand-min { animation: spin 60s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---------- entry reveal ---------- */
@@ -1127,6 +1126,9 @@ const els = {
   copyEndpoint: document.querySelector("#copyEndpoint"),
   copyJson: document.querySelector("#copyJson"),
   themeToggle: document.querySelector("#themeToggle"),
+  handHour: document.querySelector("#handHour"),
+  handMin: document.querySelector("#handMin"),
+  handSec: document.querySelector("#handSec"),
   langButtons: document.querySelectorAll("[data-lang]")
 };
 
@@ -1585,6 +1587,26 @@ function loadUrlSecret() {
   }
 }
 
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// The hero dial is a working clock showing the visitor's local time; the
+// second hand sweeps smoothly unless reduced motion is requested.
+function updateClockHands() {
+  if (!els.handHour) return;
+  const now = new Date();
+  const seconds = now.getSeconds() + (reduceMotion ? 0 : now.getMilliseconds() / 1000);
+  const minutes = now.getMinutes() + seconds / 60;
+  const hours = (now.getHours() % 12) + minutes / 60;
+  els.handSec.style.transform = "rotate(" + seconds * 6 + "deg)";
+  els.handMin.style.transform = "rotate(" + minutes * 6 + "deg)";
+  els.handHour.style.transform = "rotate(" + hours * 30 + "deg)";
+}
+
+function clockLoop() {
+  if (!document.hidden) updateClockHands();
+  window.setTimeout(clockLoop, reduceMotion ? 1000 : 120);
+}
+
 function flashCopied(element) {
   if (!element) return;
   element.classList.add("copied");
@@ -1645,6 +1667,7 @@ currentLang = detectInitialLanguage();
 applyTheme();
 loadUrlSecret();
 applyTranslations();
+clockLoop();
 tick();
 `;
 
@@ -1654,10 +1677,12 @@ const SVG_CHEVRON = `<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="c
 
 const SVG_GITHUB = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.17-.02-2.12-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.73.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.26 5.66.41.36.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A11.52 11.52 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>`;
 
+// The dial is a real clock: #handHour/#handMin/#handSec are rotated by
+// CLIENT_JS to the visitor's local (physical) time.
 const SVG_HERO_ORBIT = `<svg class="hero-orbit" viewBox="0 0 520 520" fill="none" aria-hidden="true">
 <defs>
 <linearGradient id="gOrbit" x1="0" y1="0" x2="520" y2="520" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f7dff"/><stop offset="1" stop-color="#8a6bff"/></linearGradient>
-<radialGradient id="gLens" cx="0.5" cy="0.4" r="0.78"><stop offset="0" stop-color="#8fc0ff" stop-opacity=".96"/><stop offset=".55" stop-color="#3f86ff" stop-opacity=".82"/><stop offset="1" stop-color="#7a5af8" stop-opacity=".55"/></radialGradient>
+<radialGradient id="gLens" cx="0.5" cy="0.4" r="0.78"><stop offset="0" stop-color="#8fc0ff" stop-opacity=".96"/><stop offset=".55" stop-color="#3f86ff" stop-opacity=".84"/><stop offset="1" stop-color="#7a5af8" stop-opacity=".58"/></radialGradient>
 </defs>
 <g class="orbit orbit-a">
 <circle cx="260" cy="260" r="238" stroke="url(#gOrbit)" stroke-opacity=".34" stroke-width="1.5" stroke-dasharray="3 14"/>
@@ -1665,27 +1690,39 @@ const SVG_HERO_ORBIT = `<svg class="hero-orbit" viewBox="0 0 520 520" fill="none
 <circle cx="498" cy="260" r="13" stroke="url(#gOrbit)" stroke-opacity=".4"/>
 </g>
 <g class="orbit orbit-b">
-<circle cx="260" cy="260" r="186" stroke="url(#gOrbit)" stroke-opacity=".3" stroke-width="1.2" stroke-dasharray="2 10"/>
-<circle cx="260" cy="74" r="5" fill="#2dd4bf"/>
+<circle cx="260" cy="260" r="192" stroke="url(#gOrbit)" stroke-opacity=".3" stroke-width="1.2" stroke-dasharray="2 10"/>
+<circle cx="260" cy="68" r="5" fill="#2dd4bf"/>
 </g>
 <g class="orbit orbit-c">
-<circle cx="260" cy="260" r="138" stroke="url(#gOrbit)" stroke-opacity=".4" stroke-width="1"/>
-<circle cx="122" cy="260" r="4" fill="#9b8cff"/>
+<circle cx="260" cy="260" r="158" stroke="url(#gOrbit)" stroke-opacity=".38" stroke-width="1"/>
+<circle cx="102" cy="260" r="4" fill="#9b8cff"/>
 </g>
-<circle cx="260" cy="260" r="108" stroke="url(#gOrbit)" stroke-opacity=".45" stroke-width="10" stroke-dasharray="1.6 15.36"/>
+<circle cx="260" cy="260" r="132" stroke="url(#gOrbit)" stroke-opacity=".42" stroke-width="9" stroke-dasharray="1.5 12.32"/>
 <circle cx="60" cy="122" r="3" fill="url(#gOrbit)" fill-opacity=".7"/>
 <circle cx="468" cy="418" r="2.5" fill="url(#gOrbit)" fill-opacity=".6"/>
-<circle cx="260" cy="260" r="86" fill="url(#gLens)"/>
-<circle cx="260" cy="260" r="86" stroke="url(#gOrbit)" stroke-opacity=".55" stroke-width="1.5"/>
-<g stroke="#ffffff" stroke-opacity=".65" stroke-width="3" stroke-linecap="round">
-<line x1="260" y1="182" x2="260" y2="194"/>
-<line x1="338" y1="260" x2="326" y2="260"/>
-<line x1="260" y1="338" x2="260" y2="326"/>
-<line x1="182" y1="260" x2="194" y2="260"/>
+<circle cx="260" cy="260" r="112" fill="url(#gLens)"/>
+<circle cx="260" cy="260" r="112" stroke="url(#gOrbit)" stroke-opacity=".55" stroke-width="1.5"/>
+<g stroke="#ffffff" stroke-opacity=".7" stroke-width="3.5" stroke-linecap="round">
+<line x1="260" y1="158" x2="260" y2="172"/>
+<line x1="362" y1="260" x2="348" y2="260"/>
+<line x1="260" y1="362" x2="260" y2="348"/>
+<line x1="158" y1="260" x2="172" y2="260"/>
 </g>
-<line class="hand-min" x1="260" y1="260" x2="260" y2="202" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
-<line x1="260" y1="260" x2="228" y2="242" stroke="#ffffff" stroke-opacity=".85" stroke-width="5" stroke-linecap="round"/>
+<g stroke="#ffffff" stroke-opacity=".4" stroke-width="2" stroke-linecap="round">
+<line x1="311" y1="171.7" x2="304" y2="183.8"/>
+<line x1="348.3" y1="209" x2="336.2" y2="216"/>
+<line x1="348.3" y1="311" x2="336.2" y2="304"/>
+<line x1="311" y1="348.3" x2="304" y2="336.2"/>
+<line x1="209" y1="348.3" x2="216" y2="336.2"/>
+<line x1="171.7" y1="311" x2="183.8" y2="304"/>
+<line x1="171.7" y1="209" x2="183.8" y2="216"/>
+<line x1="209" y1="171.7" x2="216" y2="183.8"/>
+</g>
+<line id="handHour" class="hand" x1="260" y1="260" x2="260" y2="204" stroke="#ffffff" stroke-opacity=".95" stroke-width="6" stroke-linecap="round"/>
+<line id="handMin" class="hand" x1="260" y1="260" x2="260" y2="176" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+<line id="handSec" class="hand" x1="260" y1="274" x2="260" y2="164" stroke="#ffd166" stroke-width="2" stroke-linecap="round"/>
 <circle cx="260" cy="260" r="6.5" fill="#ffffff"/>
+<circle cx="260" cy="260" r="2.6" fill="#1f6fe8"/>
 </svg>`;
 
 const IDLE_TOKEN_CELLS = `<span class="digit idle"><b>•</b></span><span class="digit idle"><b>•</b></span><span class="digit idle"><b>•</b></span><span class="gap" aria-hidden="true"></span><span class="digit idle"><b>•</b></span><span class="digit idle"><b>•</b></span><span class="digit idle"><b>•</b></span>`;

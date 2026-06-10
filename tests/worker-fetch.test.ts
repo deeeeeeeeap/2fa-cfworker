@@ -76,6 +76,7 @@ describe("Worker routes", () => {
     // All page imagery is inline SVG; only favicons remain as PNG routes.
     expect(body).toContain("class=\"brand-mark\"");
     expect(body).toContain("class=\"hero-orbit\"");
+    expect(body).toContain("id=\"handSec\"");
     expect(body).toContain("class=\"hero-badge");
     expect(body).toContain("class=\"feature-icon\"");
     expect(body).toContain("class=\"warning-mark\"");
