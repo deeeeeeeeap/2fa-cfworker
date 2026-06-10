@@ -280,14 +280,20 @@ button { cursor: pointer; }
 .github:focus-visible { color: var(--accent); }
 .github svg { width: 21px; height: 21px; }
 
-/* ---------- hero ---------- */
-.hero {
-  position: relative;
+/* ---------- lead: hero copy beside the generator panel ---------- */
+.lead {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(300px, 38%, 440px);
-  align-items: center;
-  gap: 28px;
-  padding: 38px 0 34px;
+  grid-template-columns: minmax(0, .94fr) minmax(0, 1.06fr);
+  align-items: stretch;
+  gap: 26px;
+  padding: 26px 0 0;
+}
+.hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
 }
 .hero-badge {
   display: inline-flex;
@@ -314,10 +320,10 @@ button { cursor: pointer; }
   70% { box-shadow: 0 0 0 10px transparent; }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
-.hero h1 {
-  margin: 16px 0 0;
-  font-size: clamp(42px, 4.5vw, 64px);
-  line-height: 1.05;
+.hero-copy h1 {
+  margin: 14px 0 0;
+  font-size: clamp(32px, 3.3vw, 46px);
+  line-height: 1.08;
   letter-spacing: -.045em;
   font-weight: 900;
   text-wrap: balance;
@@ -327,16 +333,17 @@ button { cursor: pointer; }
   color: transparent;
   -webkit-text-fill-color: transparent;
 }
-.hero p {
-  margin: 16px 0 0;
+.hero-copy p {
+  margin: 12px 0 0;
   max-width: 58ch;
   color: var(--text-2);
-  font-size: clamp(17px, 1.35vw, 21px);
-  line-height: 1.66;
+  font-size: clamp(15.5px, 1.2vw, 18px);
+  line-height: 1.62;
 }
 .hero-art {
-  justify-self: center;
-  width: 100%;
+  align-self: center;
+  width: min(62%, 270px);
+  margin-top: 26px;
   pointer-events: none;
   user-select: none;
 }
@@ -377,12 +384,14 @@ button { cursor: pointer; }
 }
 
 /* ---------- panels ---------- */
-.main-grid {
+.lower-grid {
   display: grid;
-  grid-template-columns: 1.18fr .82fr;
+  grid-template-columns: minmax(0, .94fr) minmax(0, 1.06fr);
+  grid-template-areas: "features api";
   gap: 16px;
-  margin-top: 8px;
+  margin-top: 16px;
 }
+.panel-api { grid-area: api; }
 .panel {
   position: relative;
   border: 1px solid var(--border);
@@ -895,16 +904,16 @@ button { cursor: pointer; }
 
 /* ---------- features ---------- */
 .feature-grid {
+  grid-area: features;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 14px;
-  margin-top: 18px;
 }
 .feature {
   display: grid;
   grid-template-columns: 46px minmax(0, 1fr);
   gap: 12px;
-  align-items: start;
+  align-items: center;
   border: 1px solid var(--border);
   border-radius: 16px;
   background: var(--surface);
@@ -1003,28 +1012,43 @@ button { cursor: pointer; }
 
 /* ---------- responsive ---------- */
 @media (max-width: 1180px) {
-  .hero { gap: 18px; padding: 32px 0 30px; }
-  .hero h1 { font-size: clamp(38px, 4.6vw, 54px); }
-  .main-grid { grid-template-columns: 1.1fr .9fr; }
+  .lead { gap: 18px; }
+  .hero-copy h1 { font-size: clamp(30px, 3.4vw, 40px); }
+  .result-main { grid-template-columns: minmax(0, 1fr) 100px; gap: 10px; }
+  .timer { width: 92px; height: 92px; }
+  .timer-value { font-size: 22px; }
+  .digit { width: clamp(30px, 3.3vw, 46px); height: clamp(46px, 4.6vw, 64px); }
+  .digit b { font-size: clamp(22px, 2.4vw, 34px); }
+  .token { gap: 6px; }
+  .token .gap { width: 8px; }
 }
 @media (max-width: 960px) {
   .topbar-inner { min-height: 60px; }
   .brand { font-size: 22px; }
   .brand-mark { width: 36px; height: 36px; }
-  .hero {
+  .lead {
     grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 24px 0 0;
+  }
+  .hero-copy {
+    align-items: center;
     text-align: center;
-    gap: 0;
-    padding: 28px 0 26px;
   }
-  .hero p { margin-inline: auto; }
-  .hero-art {
-    order: 2;
-    max-width: 340px;
-    margin: 18px auto 0;
+  .hero-copy p { margin-inline: auto; }
+  .hero-art { width: min(56%, 250px); margin-top: 16px; }
+  .lower-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas: "api" "features";
+    gap: 14px;
+    margin-top: 14px;
   }
-  .main-grid { grid-template-columns: 1fr; gap: 14px; }
   .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .result-main { grid-template-columns: minmax(0, 1fr) 116px; }
+  .timer { width: 108px; height: 108px; }
+  .timer-value { font-size: 26px; }
+  .digit { width: clamp(38px, 6vw, 54px); height: clamp(54px, 8.2vw, 74px); }
+  .digit b { font-size: clamp(28px, 4.4vw, 42px); }
 }
 @media (max-width: 720px) {
   .shell { width: min(100% - 24px, 1232px); }
@@ -1040,11 +1064,11 @@ button { cursor: pointer; }
     gap: 8px;
   }
   .lang button { min-width: 48px; padding: 0 10px; }
-  .hero { padding: 20px 0 20px; }
-  .hero h1 { margin-top: 14px; font-size: clamp(30px, 8.4vw, 38px); letter-spacing: -.04em; }
-  .hero p { margin-top: 12px; font-size: 15.5px; }
-  .hero-art { max-width: 250px; margin-top: 14px; }
-  .feature-grid { grid-template-columns: 1fr; gap: 11px; margin-top: 14px; }
+  .lead { padding: 18px 0 0; }
+  .hero-copy h1 { margin-top: 14px; font-size: clamp(30px, 8.4vw, 38px); letter-spacing: -.04em; }
+  .hero-copy p { margin-top: 12px; font-size: 15.5px; }
+  .hero-art { width: min(68%, 230px); margin-top: 14px; }
+  .feature-grid { grid-template-columns: 1fr; gap: 11px; }
   .feature { padding: 15px 16px; }
   .panel { padding: 18px; border-radius: 16px; }
   .panel-title { font-size: 17.5px; margin-bottom: 12px; }
@@ -1077,11 +1101,11 @@ button { cursor: pointer; }
   .brand { font-size: 19px; gap: 9px; }
   .brand-mark { width: 33px; height: 33px; }
   .github span { display: none; }
-  .hero { padding: 16px 0 16px; }
+  .lead { padding: 14px 0 0; }
   .hero-badge { font-size: 11.5px; padding: 6px 12px; }
-  .hero h1 { font-size: clamp(26.5px, 8vw, 31px); }
-  .hero p { font-size: 14.5px; line-height: 1.6; }
-  .hero-art { max-width: 215px; }
+  .hero-copy h1 { font-size: clamp(26.5px, 8vw, 31px); }
+  .hero-copy p { font-size: 14.5px; line-height: 1.6; }
+  .hero-art { width: min(72%, 215px); }
   .input-wrap input { height: 46px; padding-left: 13px; font-size: 12.5px; }
   .digit {
     width: clamp(30px, 11vw, 42px);
@@ -1096,6 +1120,56 @@ button { cursor: pointer; }
   .code-body { padding: 12px 13px 14px; }
   .code-line { font-size: 12.5px; }
   .primary { min-height: 50px; }
+}
+
+/* Short desktop windows: compress vertical rhythm so the generator panel
+   stays fully usable above the fold instead of being cut mid-card. */
+@media (min-width: 961px) and (max-height: 840px) {
+  .topbar-inner { min-height: 58px; }
+  .brand { font-size: 21px; }
+  .brand-mark { width: 34px; height: 34px; }
+  .lead { padding-top: 16px; gap: 22px; }
+  .hero-badge { font-size: 12px; padding: 6px 13px; }
+  .hero-copy h1 { margin-top: 12px; font-size: clamp(28px, 2.8vw, 38px); }
+  .hero-copy p { margin-top: 10px; font-size: 15px; }
+  .hero-art { width: min(50%, 225px); margin-top: 18px; }
+  .panel { padding: 20px; }
+  .panel-title { margin-bottom: 12px; }
+  .field { margin-top: 10px; }
+  .field label { margin-bottom: 6px; }
+  .input-wrap input { height: 44px; }
+  .icon-button { width: 40px; height: 40px; }
+  .advanced { margin-top: 12px; }
+  .advanced summary { min-height: 42px; }
+  .primary { margin-top: 12px; min-height: 48px; }
+  .result-card { margin-top: 12px; }
+  .result-main { padding: 14px 16px 10px; }
+  .digit { height: clamp(44px, 7.4vh, 60px); }
+  .digit b { font-size: clamp(22px, 3.8vh, 32px); }
+  .timer { width: 88px; height: 88px; }
+  .timer-value { font-size: 21px; }
+  .next { height: 36px; font-size: 12.5px; }
+  .lower-grid { margin-top: 14px; }
+  .feature { padding: 15px 16px; }
+}
+@media (min-width: 961px) and (max-height: 680px) {
+  .hero-art { display: none; }
+  .lead { padding-top: 12px; gap: 18px; }
+  .hero-copy h1 { font-size: clamp(26px, 2.5vw, 32px); }
+  .panel { padding: 16px 18px; }
+  .panel-title { margin-bottom: 8px; }
+  .field { margin-top: 8px; }
+  .field-hint, .field-error { margin-top: 4px; }
+  .advanced { margin-top: 10px; }
+  .advanced summary { min-height: 38px; }
+  .primary { margin-top: 10px; min-height: 46px; }
+  .result-card { margin-top: 10px; }
+  .result-main { padding: 10px 14px 6px; }
+  .digit { height: clamp(40px, 6.8vh, 52px); }
+  .digit b { font-size: clamp(20px, 3.4vh, 28px); }
+  .timer { width: 74px; height: 74px; }
+  .timer-value { font-size: 18px; }
+  .next { height: 32px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1780,16 +1854,14 @@ const PAGE_HTML = `<!doctype html>
   </header>
 
   <main class="shell">
-    <section class="hero">
+    <section class="lead">
       <div class="hero-copy">
         <span class="hero-badge reveal"><i class="pulse-dot" aria-hidden="true"></i><span data-i18n="heroBadge">RFC 6238 标准 · 全球边缘网络</span></span>
         <h1 class="reveal d1" data-i18n="heroTitle">即时生成 TOTP 验证码</h1>
         <p class="reveal d2" data-i18n-html="heroDesc">根据 TOTP 密钥计算 6 位 2FA 验证码。<br>通过快速 JSON API 进行自动化与集成。</p>
+        <div class="hero-art reveal d2" aria-hidden="true">${SVG_HERO_ORBIT}</div>
       </div>
-      <div class="hero-art reveal d2" aria-hidden="true">${SVG_HERO_ORBIT}</div>
-    </section>
 
-    <section class="main-grid">
       <section class="panel reveal d3">
         <div class="panel-title"><span class="panel-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="14.5" r="3.5"/><path d="m10.8 12 8.7-8.7"/><path d="m15.5 7.5 2.6 2.6"/><path d="m12.8 10.2 1.8 1.8"/></svg></span><span data-i18n="panelTitle">生成 TOTP 验证码</span><span class="panel-tag" aria-hidden="true">RFC 6238</span></div>
         <div class="field">
@@ -1832,8 +1904,10 @@ const PAGE_HTML = `<!doctype html>
         <p id="error" class="error" role="alert" aria-live="assertive"></p>
         <p id="status" class="sr-only" aria-live="polite" aria-atomic="true"></p>
       </section>
+    </section>
 
-      <section id="api" class="panel reveal d4">
+    <section class="lower-grid">
+      <section id="api" class="panel panel-api reveal d4">
         <div class="panel-title"><span class="panel-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8.5 9-3.5 3 3.5 3"/><path d="m15.5 9 3.5 3-3.5 3"/><path d="M13 7.5 11 16.5"/></svg></span><span data-i18n="apiTitle">JSON API</span><span class="panel-chips" aria-hidden="true"><span class="chip">GET</span><span class="chip chip-post">POST</span></span></div>
         <p class="api-desc" data-i18n="apiDesc">推荐使用 POST /api/totp 获取当前 TOTP 验证码。</p>
         <div class="field">
@@ -1853,13 +1927,13 @@ const PAGE_HTML = `<!doctype html>
         </div>
         <div class="api-note-box"><span class="note-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 11v5"/><path d="M12 7.6v.2"/></svg></span><span data-i18n="apiNote">POST /api/totp 更适合自动化；URL secret 接口仅建议用于兼容旧工具或临时测试。</span></div>
       </section>
-    </section>
 
-    <section class="feature-grid" id="guide">
+      <section class="feature-grid" id="guide">
       <div class="feature reveal d4"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 19.5 5v6c0 4.8-3.2 8.2-7.5 9.5C7.7 19.2 4.5 15.8 4.5 11V5Z"/><circle cx="12" cy="11" r="4.2"/><path d="M12 8.8V11l1.6 1"/></svg></span><div><h3 data-i18n="featureTotpTitle">即时 TOTP 验证码</h3><p data-i18n="featureTotpText">生成有效的 6 位数字验证码，实时倒计时确保使用时效性。</p></div></div>
       <div class="feature f-teal reveal d4"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8.5 9-3.5 3 3.5 3"/><path d="m15.5 9 3.5 3-3.5 3"/><path d="M13 7.5 11 16.5"/></svg></span><div><h3 data-i18n="featureApiTitle">JSON API</h3><p data-i18n="featureApiText">简单、快速、轻量的 API 设计，适合自动化和集成。</p></div></div>
       <div class="feature f-orange reveal d5"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18.5a4.5 4.5 0 0 1-.4-9A6 6 0 0 1 18.7 11a3.8 3.8 0 0 1-.9 7.5Z"/><path d="m12.5 11.5-2 3h3l-2 3"/></svg></span><div><h3 data-i18n="featureCfTitle">运行在 Cloudflare Workers</h3><p data-i18n="featureCfText">全球边缘性能，构建速度快，可靠性高。</p></div></div>
       <div class="feature f-violet reveal d5"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7" ry="2.8"/><path d="M5 5.5v13c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-13"/><path d="M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8"/></svg></span><div><h3 data-i18n="featureDbTitle">无需数据库</h3><p data-i18n="featureDbText">无状态设计，无需存储、无设置、无需维护。</p></div></div>
+      </section>
     </section>
 
     <section id="security" class="warning">
