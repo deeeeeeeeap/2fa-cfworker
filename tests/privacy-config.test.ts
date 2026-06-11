@@ -85,7 +85,11 @@ describe("privacy and deployment configuration", () => {
 
     expect(limiter.name).toBe("TOTP_RATE_LIMITER");
     expect(limiter.simple.limit).toBeGreaterThan(0);
-    expect([10, 60]).toContain(limiter.simple.period);
+    // Must equal RATE_LIMIT_PERIOD_SECONDS in src/index.ts: the 429
+    // Retry-After header is derived from that constant, so changing the
+    // wrangler period alone would silently mislead clients.
+    expect(limiter.simple.period).toBe(10);
+    expect(readText("src/index.ts")).toContain("const RATE_LIMIT_PERIOD_SECONDS = 10;");
   });
 
   it("keeps every src/ module free of console logging and permissive CORS", () => {

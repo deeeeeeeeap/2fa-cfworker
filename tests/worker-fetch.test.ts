@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import worker from "../src/index";
 
 const RFC_SHA1_SECRET_BASE32 = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
+const RFC_SHA256_SECRET_BASE32 = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQGEZA";
 const PNG_MAGIC_BYTES = [137, 80, 78, 71, 13, 10, 26, 10];
 
 type TestEnv = Parameters<typeof worker.fetch>[1];
@@ -54,7 +55,10 @@ describe("Worker routes", () => {
     expect(body).toContain("loadUrlSecret");
     expect(body).not.toContain("FXPYSQPDSJ5U64X363J3SZXUAPWV5UZY");
 
-    expect(body).toContain("id=\"secret\" autocomplete=\"off\" spellcheck=\"false\" value=\"\" aria-describedby=\"secret-help secret-error\"");
+    expect(body).toContain("id=\"secret\" autocomplete=\"off\" spellcheck=\"false\" value=\"\" aria-describedby=\"secret-help secret-error\" type=\"password\"");
+    expect(body).toContain("id=\"toggleSecret\" class=\"icon-button reveal-toggle\"");
+    expect(body).toContain("id=\"driftWarn\" class=\"drift-warn\" role=\"status\" hidden");
+    expect(body).toContain(`© ${new Date().getFullYear()} 2FA Worker`);
     expect(body).toContain("id=\"secret-help\" class=\"field-hint\"");
     expect(body).toContain("id=\"secret-error\" class=\"field-error\" role=\"alert\" aria-live=\"assertive\"");
     expect(body).toContain("id=\"endpoint\" readonly value=\"\"");
@@ -227,6 +231,61 @@ describe("Worker routes", () => {
     expect(postResult.body).toEqual({ error: "secret is required" });
   });
 
+  it("wires period, algorithm, and t0 query parameters through to the TOTP core", async () => {
+    // RFC 6238 Appendix B SHA256 vector: T=59 -> 46119246.
+    const sha256 = await json(`/api/totp?secret=${RFC_SHA256_SECRET_BASE32}&algorithm=SHA256&time=59&digits=8`);
+    expect(sha256.response.status).toBe(200);
+    expect(sha256.body).toMatchObject({ token: "46119246", algorithm: "SHA256" });
+
+    // t0=30 shifts the epoch: time=89 lands in the same slot as time=59.
+    const shifted = await json(`/api/totp?secret=${RFC_SHA1_SECRET_BASE32}&time=89&t0=30&digits=8`);
+    expect(shifted.response.status).toBe(200);
+    expect(shifted.body).toMatchObject({ token: "94287082", counter: "1" });
+
+    // period=60 keeps time=59 in counter 0 (RFC 4226 counter-0 vector).
+    const longPeriod = await json(`/api/totp?secret=${RFC_SHA1_SECRET_BASE32}&time=59&period=60&digits=8`);
+    expect(longPeriod.response.status).toBe(200);
+    expect(longPeriod.body).toMatchObject({ token: "84755224", period: 60, counter: "0", remaining: 1 });
+  });
+
+  it("rejects POSTs with wrong content-type, empty bodies, and oversize chunked streams", async () => {
+    const wrongType = await json("/api/totp", {
+      method: "POST",
+      headers: { "content-type": "text/plain" },
+      body: "{}",
+    });
+    expect(wrongType.response.status).toBe(415);
+    expect(wrongType.body.error).toBe("content-type must be application/json");
+
+    const empty = await json("/api/totp", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "",
+    });
+    expect(empty.response.status).toBe(400);
+    expect(empty.body.error).toBe("request body must be valid JSON");
+
+    // A chunked stream without content-length must still hit the streaming
+    // size limit instead of bypassing the header-based check.
+    const chunk = new TextEncoder().encode("x".repeat(1024));
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(chunk);
+        controller.enqueue(chunk);
+        controller.enqueue(chunk);
+        controller.close();
+      },
+    });
+    const oversized = await json("/api/totp", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: stream,
+      duplex: "half",
+    } as RequestInit);
+    expect(oversized.response.status).toBe(413);
+    expect(oversized.body.error).toBe("request body is too large");
+  });
+
   it("handles malformed and oversized JSON as client errors without echoing secrets", async () => {
     const malformed = await json("/api/totp", {
       method: "POST",
@@ -307,6 +366,26 @@ describe("Worker routes", () => {
 
     const health = await worker.fetch(request("/healthz"), blockedEnv);
     expect(health.status).toBe(200);
+  });
+
+  it("keys rate limiting by the connecting IP with an unknown fallback", async () => {
+    const seenKeys: string[] = [];
+    const env: TestEnv = {
+      TOTP_RATE_LIMITER: {
+        limit: async ({ key }: { key: string }) => {
+          seenKeys.push(key);
+          return { success: true };
+        },
+      },
+    };
+
+    await worker.fetch(
+      request(`/api/totp?secret=${RFC_SHA1_SECRET_BASE32}&time=59`, { headers: { "cf-connecting-ip": "203.0.113.9" } }),
+      env,
+    );
+    await worker.fetch(request(`/tok/${RFC_SHA1_SECRET_BASE32}?time=59`), env);
+
+    expect(seenKeys).toEqual(["203.0.113.9", "unknown"]);
   });
 
   it("serves tokens when the rate limiter allows requests or fails open", async () => {

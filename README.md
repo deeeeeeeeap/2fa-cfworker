@@ -102,6 +102,12 @@ npm run size
 MAX_GZIP_KIB=128 npm run size
 ```
 
+Windows PowerShell 下：
+
+```powershell
+$env:MAX_GZIP_KIB = "128"; npm run size
+```
+
 远端开发模式更接近 Cloudflare 边缘运行环境：
 
 ```bash

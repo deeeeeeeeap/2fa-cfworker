@@ -118,6 +118,33 @@ describe("client/server algorithm drift", () => {
     }
   });
 
+  it("rejects degenerate secrets identically on both sides", () => {
+    // "A"/"A=" decode to zero bytes (5 bits): the server throws its empty-key
+    // error and the client must mirror it instead of reaching importKey.
+    for (const sample of ["A", "A=", "AA", "AAAA"]) {
+      let serverBytes: number[] | undefined;
+      let serverThrew = false;
+      try {
+        serverBytes = Array.from(base32ToBytes(sample));
+      } catch {
+        serverThrew = true;
+      }
+
+      let clientBytes: number[] | undefined;
+      let clientThrew = false;
+      try {
+        clientBytes = Array.from(client.base32ToBytes(sample));
+      } catch {
+        clientThrew = true;
+      }
+
+      expect(clientThrew, sample).toBe(serverThrew);
+      if (!serverThrew) {
+        expect(clientBytes, sample).toEqual(serverBytes);
+      }
+    }
+  });
+
   it("encodes HOTP counters into identical big-endian bytes", () => {
     for (const counter of [0n, 1n, 59n, 255n, 4294967296n, 9223372036854775807n]) {
       expect(Array.from(client.counterToBytes(counter)), String(counter)).toEqual(Array.from(counterToBytes(counter)));

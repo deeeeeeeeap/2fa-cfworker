@@ -13,6 +13,7 @@ Required operational practices:
 7. The code ships with a built-in per-IP rate limiting binding (see `ratelimits` in `wrangler.jsonc`); public deployments must still layer Cloudflare WAF / Rate Limiting rules and usage alerts on top in the Dashboard.
 8. Keep `X-Robots-Tag: noindex, nofollow, noarchive` on HTML, API, token, and error responses.
 9. For browser auto-fill, use the fragment form `/#/tok/<secret>`: the fragment is never sent to the server, and the page clears it from the address bar after reading it. The former `/<secret>` bare-path route has been removed.
+10. The API intentionally sends no CORS headers, so cross-origin browser calls fail by design: third-party pages must never be able to read tokens, and secrets should not flow through other origins' frontends. Automate from servers or CLI tools instead; do not "fix" this by adding `Access-Control-Allow-Origin`.
 
 Deployment default:
 

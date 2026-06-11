@@ -42,7 +42,7 @@ const COMMON_HEADERS: Record<string, string> = {
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Resource-Policy": "same-origin",
   "Origin-Agent-Cluster": "?1",
-  "Permissions-Policy": "clipboard-write=(self)",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), usb=(), payment=(), clipboard-write=(self)",
   "X-Robots-Tag": "noindex, nofollow, noarchive",
 };
 
@@ -70,6 +70,9 @@ function securityHeaders(contentType: string, cacheControl: string, nonce?: stri
         "form-action 'self'",
       ].join("; "),
     );
+  } else {
+    // Defense in depth for non-HTML responses rendered as documents.
+    headers.set("Content-Security-Policy", "default-src 'none'");
   }
   return headers;
 }
@@ -108,8 +111,14 @@ function dataUriToBytes(dataUri: string): ByteArray {
   return bytes;
 }
 
-function pngResponse(dataUri: string): Response {
-  return new Response(dataUriToBytes(dataUri), {
+// Decoded once at module load: favicons are static and secret-free, so unlike
+// the per-request HMAC keys they are safe to keep in isolate memory.
+const ASSET_BYTES: Record<string, ByteArray> = Object.fromEntries(
+  Object.entries(ASSET_ROUTES).map(([pathname, dataUri]) => [pathname, dataUriToBytes(dataUri)]),
+);
+
+function pngResponse(bytes: ByteArray): Response {
+  return new Response(bytes, {
     headers: securityHeaders("image/png", "public, max-age=86400, immutable"),
   });
 }
@@ -269,8 +278,8 @@ async function handleRequest(request: Request, env: Env | undefined): Promise<Re
     return htmlResponse(homeHtml(scriptNonce), scriptNonce);
   }
 
-  if (url.pathname in ASSET_ROUTES && method === "GET") {
-    return pngResponse(ASSET_ROUTES[url.pathname]);
+  if (url.pathname in ASSET_BYTES && method === "GET") {
+    return pngResponse(ASSET_BYTES[url.pathname]);
   }
 
   if (url.pathname === "/robots.txt" && method === "GET") {
