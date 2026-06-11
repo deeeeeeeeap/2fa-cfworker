@@ -16,6 +16,7 @@ const GITHUB_REPOSITORY_URL = "https://github.com/deeeeeeeeap/2fa-cfworker";
 
 const PAGE_CSS = `
 :root {
+  --topbar-h: 78px;
   --bg: #f4f8ff;
   --surface: rgba(255, 255, 255, .72);
   --surface-2: rgba(255, 255, 255, .92);
@@ -197,7 +198,7 @@ button { cursor: pointer; }
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  min-height: 78px;
+  min-height: var(--topbar-h);
 }
 .brand {
   display: flex;
@@ -281,12 +282,18 @@ button { cursor: pointer; }
 .github svg { width: 21px; height: 21px; }
 
 /* ---------- lead: hero copy beside the generator panel ---------- */
+/* The lead owns the first screen: it fills the viewport below the topbar and
+   centers the hero + generator vertically, so the fold lands on its bottom
+   padding instead of slicing through the cards below. */
 .lead {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, .94fr) minmax(0, 1.06fr);
-  align-items: stretch;
-  gap: 26px;
-  padding: 26px 0 0;
+  align-items: center;
+  gap: 32px;
+  padding: 24px 0 64px;
+  min-height: calc(100vh - var(--topbar-h));
+  min-height: calc(100svh - var(--topbar-h));
 }
 .hero-copy {
   display: flex;
@@ -322,7 +329,7 @@ button { cursor: pointer; }
 }
 .hero-copy h1 {
   margin: 14px 0 0;
-  font-size: clamp(32px, 3.3vw, 46px);
+  font-size: clamp(32px, 3.4vw, 48px);
   line-height: 1.08;
   letter-spacing: -.045em;
   font-weight: 900;
@@ -342,8 +349,8 @@ button { cursor: pointer; }
 }
 .hero-art {
   align-self: center;
-  width: min(62%, 270px);
-  margin-top: 26px;
+  width: min(64%, 290px);
+  margin-top: 30px;
   pointer-events: none;
   user-select: none;
 }
@@ -368,6 +375,30 @@ button { cursor: pointer; }
 .hero-orbit .orbit-c { animation: spin 96s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Decorative hint that more content sits below the fold. */
+.scroll-cue {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-2);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-3);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  animation: cue-bob 2.4s ease-in-out infinite;
+}
+.scroll-cue svg { width: 17px; height: 17px; }
+@keyframes cue-bob {
+  0%, 100% { transform: translate(-50%, 0); opacity: .8; }
+  50% { transform: translate(-50%, 7px); opacity: 1; }
+}
+
 /* ---------- entry reveal ---------- */
 .reveal {
   opacity: 0;
@@ -388,8 +419,8 @@ button { cursor: pointer; }
   display: grid;
   grid-template-columns: minmax(0, .94fr) minmax(0, 1.06fr);
   grid-template-areas: "features api";
-  gap: 16px;
-  margin-top: 16px;
+  gap: 18px;
+  margin-top: 0;
 }
 .panel-api { grid-area: api; }
 .panel {
@@ -959,7 +990,7 @@ button { cursor: pointer; }
   align-items: center;
   gap: 18px;
   min-height: 74px;
-  margin-top: 14px;
+  margin-top: 18px;
   border: 1px solid var(--warning-border);
   border-radius: 16px;
   padding: 15px 24px;
@@ -1023,14 +1054,16 @@ button { cursor: pointer; }
   .token .gap { width: 8px; }
 }
 @media (max-width: 960px) {
-  .topbar-inner { min-height: 60px; }
+  :root { --topbar-h: 60px; }
   .brand { font-size: 22px; }
   .brand-mark { width: 36px; height: 36px; }
   .lead {
     grid-template-columns: 1fr;
     gap: 18px;
     padding: 24px 0 0;
+    min-height: 0;
   }
+  .scroll-cue { display: none; }
   .hero-copy {
     align-items: center;
     text-align: center;
@@ -1052,18 +1085,15 @@ button { cursor: pointer; }
 }
 @media (max-width: 720px) {
   .shell { width: min(100% - 24px, 1232px); }
-  .topbar-inner {
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 8px 0;
-    min-height: 0;
-  }
-  .nav {
-    width: 100%;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .lang button { min-width: 48px; padding: 0 10px; }
+  /* Keep the topbar on a single row: brand left, controls right. A wrapped
+     space-between nav used to strand the theme toggle mid-header. */
+  .topbar-inner { gap: 10px; }
+  .brand { font-size: 20px; gap: 10px; }
+  .brand-mark { width: 34px; height: 34px; }
+  .nav { gap: 8px; }
+  .lang button { min-width: 46px; min-height: 38px; padding: 0 10px; }
+  .theme-toggle { width: 40px; height: 40px; }
+  .github { min-height: 40px; }
   .lead { padding: 18px 0 0; }
   .hero-copy h1 { margin-top: 14px; font-size: clamp(30px, 8.4vw, 38px); letter-spacing: -.04em; }
   .hero-copy p { margin-top: 12px; font-size: 15.5px; }
@@ -1101,6 +1131,7 @@ button { cursor: pointer; }
   .brand { font-size: 19px; gap: 9px; }
   .brand-mark { width: 33px; height: 33px; }
   .github span { display: none; }
+  .lang button { min-width: 42px; padding: 0 8px; }
   .lead { padding: 14px 0 0; }
   .hero-badge { font-size: 11.5px; padding: 6px 12px; }
   .hero-copy h1 { font-size: clamp(26.5px, 8vw, 31px); }
@@ -1121,14 +1152,20 @@ button { cursor: pointer; }
   .code-line { font-size: 12.5px; }
   .primary { min-height: 50px; }
 }
+@media (max-width: 380px) {
+  .brand { font-size: 18px; }
+  .lang button { min-width: 40px; padding: 0 7px; }
+  .github { padding: 0 2px; }
+}
 
 /* Short desktop windows: compress vertical rhythm so the generator panel
    stays fully usable above the fold instead of being cut mid-card. */
 @media (min-width: 961px) and (max-height: 840px) {
-  .topbar-inner { min-height: 58px; }
+  :root { --topbar-h: 58px; }
   .brand { font-size: 21px; }
   .brand-mark { width: 34px; height: 34px; }
-  .lead { padding-top: 16px; gap: 22px; }
+  .lead { padding: 16px 0 52px; gap: 22px; }
+  .scroll-cue { bottom: 12px; }
   .hero-badge { font-size: 12px; padding: 6px 13px; }
   .hero-copy h1 { margin-top: 12px; font-size: clamp(28px, 2.8vw, 38px); }
   .hero-copy p { margin-top: 10px; font-size: 15px; }
@@ -1154,7 +1191,8 @@ button { cursor: pointer; }
 }
 @media (min-width: 961px) and (max-height: 680px) {
   .hero-art { display: none; }
-  .lead { padding-top: 12px; gap: 18px; }
+  .lead { padding: 12px 0 20px; gap: 18px; }
+  .scroll-cue { display: none; }
   .hero-copy h1 { font-size: clamp(26px, 2.5vw, 32px); }
   .panel { padding: 16px 18px; }
   .panel-title { margin-bottom: 8px; }
@@ -1904,6 +1942,8 @@ const PAGE_HTML = `<!doctype html>
         <p id="error" class="error" role="alert" aria-live="assertive"></p>
         <p id="status" class="sr-only" aria-live="polite" aria-atomic="true"></p>
       </section>
+
+      <div class="scroll-cue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg></div>
     </section>
 
     <section class="lower-grid">
