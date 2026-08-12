@@ -28,7 +28,7 @@
 - **无状态运行** — 无数据库、无 KV、无持久化存储依赖，部署即用。
 - **浏览器本地生成** — 首页 UI 内置完整 TOTP 实现（Web Crypto），密钥可以不发送到服务器；也提供 `POST /api/totp` JSON API 用于自动化。
 - **标准完备** — RFC 6238 / RFC 4226，支持 `SHA1` / `SHA256` / `SHA512`，6–8 位验证码，周期与 `t0` 可调。
-- **兼容旧工具** — `2fa.live` 风格的 `/tok/<secret>` 接口开箱即用。
+- **兼容完善** —  `/tok/<secret>` 接口开箱即用。
 - **隐私优先** — 默认关闭 persisted observability、invocation logs 与 Logpush；HTML/API 全部 `no-store`；静态检查拦截任何可能记录 secret 的代码。
 - **安全纵深** — CSP（script + style 双 nonce）、HSTS、每 IP 限流（20 次 / 10 秒，可调）、流式 body 限长、安全响应头全家桶。
 - **质感 UI** — 「时间仪器」风格界面：深浅双主题、SVG 轨道时钟、逐位验证码单元格、平滑倒计时环、中英双语、本机时钟漂移检测；除 favicon 外全部资产为内联 SVG。
