@@ -350,8 +350,13 @@ button { cursor: pointer; }
   70% { box-shadow: 0 0 0 10px transparent; }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
+/* background-clip: text paints only inside the padding box, and line-height
+   1.08 leaves the last line's descender ~0.11em below it -- enough to slice the
+   tail off a "y". The em padding restores that room at every clamp step and the
+   matching negative margin keeps the gap to the paragraph unchanged. */
 .hero-copy h1 {
-  margin: 14px 0 0;
+  margin: 14px 0 -.14em;
+  padding-bottom: .14em;
   font-size: clamp(32px, 3.4vw, 48px);
   line-height: 1.08;
   letter-spacing: -.045em;
@@ -1126,6 +1131,13 @@ button { cursor: pointer; }
 }
 @media (max-width: 720px) {
   .shell { width: min(100% - 24px, 1232px); }
+  /* A phone packs far more CSS pixels into the same physical width, so the
+     desktop hairline reads as frail in the hand. Nudge the whole icon family up
+     one step, keeping each slot's offset from the base weight. */
+  .ico { --sw: 1.9; }
+  .warning-mark .ico { --sw: 2.3; }
+  .primary .ico { --sw: 2.1; }
+  .icon-button .ic-check { --sw: 2.3; }
   /* Keep the topbar on a single row: brand left, controls right. A wrapped
      space-between nav used to strand the theme toggle mid-header. */
   .topbar-inner { gap: 10px; }
@@ -2011,11 +2023,15 @@ const SVG_GITHUB = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="tr
 // segments), so the pattern closes without a seam; the half-dash dashoffset
 // centres a segment on 3 o'clock and therefore on all four cardinal points.
 // Recompute the gap as 2*PI*r/count - dash if a radius changes.
+// The comet tail is one 60-degree arc whose gradient axis (gTail x1/y1 -> x2/y2)
+// runs between its own endpoints, so the fade stays glued to the arc as the
+// group rotates. Move the arc and gTail together or the fade detaches.
 const SVG_HERO_ORBIT = `<svg class="hero-orbit" viewBox="0 0 520 520" fill="none" aria-hidden="true">
 <defs>
 <linearGradient id="gOrbit" x1="0" y1="0" x2="520" y2="520" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f7dff"/><stop offset="1" stop-color="#8a6bff"/></linearGradient>
 <radialGradient id="gLens" cx="0.5" cy="0.4" r="0.78"><stop offset="0" stop-color="#8fc0ff" stop-opacity=".96"/><stop offset=".55" stop-color="#3f86ff" stop-opacity=".84"/><stop offset="1" stop-color="#7a5af8" stop-opacity=".58"/></radialGradient>
 <radialGradient id="gVignette" cx=".5" cy=".5" r=".5"><stop offset=".74" stop-color="#0a265f" stop-opacity="0"/><stop offset="1" stop-color="#0a265f" stop-opacity=".13"/></radialGradient>
+<linearGradient id="gTail" x1="184" y1="391.64" x2="108" y2="260" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#9b8cff" stop-opacity="0"/><stop offset=".5" stop-color="#9b8cff" stop-opacity=".1"/><stop offset=".82" stop-color="#9b8cff" stop-opacity=".42"/><stop offset="1" stop-color="#9b8cff" stop-opacity=".9"/></linearGradient>
 </defs>
 <g class="orbit orbit-a">
 <circle cx="260" cy="260" r="232" stroke="url(#gOrbit)" stroke-opacity=".34" stroke-width="1.35" stroke-dasharray="2.9 14.4536" stroke-dashoffset="1.45"/>
@@ -2033,8 +2049,7 @@ const SVG_HERO_ORBIT = `<svg class="hero-orbit" viewBox="0 0 520 520" fill="none
 </g>
 <g class="orbit orbit-c">
 <circle cx="260" cy="260" r="152" stroke="url(#gOrbit)" stroke-opacity=".3" stroke-width="1"/>
-<circle cx="260" cy="260" r="152" stroke="url(#gOrbit)" stroke-opacity=".2" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="88 867.04" stroke-dashoffset="-389.52"/>
-<circle cx="260" cy="260" r="152" stroke="url(#gOrbit)" stroke-opacity=".45" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="34 921.04" stroke-dashoffset="-443.52"/>
+<path d="M184 391.64A152 152 0 0 1 108 260" stroke="url(#gTail)" stroke-width="1.9" stroke-linecap="round"/>
 <circle cx="108" cy="260" r="9.4" fill="#9b8cff" fill-opacity=".16"/>
 <circle cx="108" cy="260" r="3.9" fill="#9b8cff"/>
 </g>
