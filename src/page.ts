@@ -36,7 +36,7 @@ const PAGE_CSS = `
   --token-ink: #0f5ce8;
   --ring-track: rgba(18, 44, 99, .10);
   --danger: #d92d20;
-  --warn-strong: #b46a08;
+  --warn-strong: #b45309;
   --code-bg: #0b1526;
   --code-ink: #d6e2f3;
   --aurora-a: rgba(23, 105, 255, .14);
@@ -186,6 +186,25 @@ button { cursor: pointer; }
   width: min(1232px, calc(100vw - 48px));
   margin: 0 auto;
 }
+
+/* ---------- icon system ---------- */
+/* Every line icon is drawn on the same 24-unit grid but rendered anywhere from
+   15px to 42px. non-scaling-stroke makes stroke-width mean *rendered* pixels
+   rather than grid units, so one weight here keeps the whole set optically
+   consistent instead of the 1.25px-3.15px spread that per-glyph widths gave.
+   Paint properties are inherited, so glyph markup carries geometry only. */
+.ico {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--sw, 1.6);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ico :is(path, circle, ellipse, rect, line, polyline) { vector-effect: non-scaling-stroke; }
+/* Display sizes carry a little more weight; hairlines look frail past ~32px. */
+.warning-mark .ico { --sw: 2; }
+.primary .ico { --sw: 1.8; }
+.icon-button .ic-check { --sw: 2; }
 
 /* ---------- topbar ---------- */
 .topbar {
@@ -351,10 +370,11 @@ button { cursor: pointer; }
   font-size: clamp(15.5px, 1.2vw, 18px);
   line-height: 1.62;
 }
+/* No align-self: the dial follows .hero-copy's own alignment, so it shares the
+   headline's left axis on desktop and re-centres with the copy below 960px. */
 .hero-art {
-  align-self: center;
-  width: min(64%, 290px);
-  margin-top: 30px;
+  width: min(72%, 340px);
+  margin-top: 26px;
   pointer-events: none;
   user-select: none;
 }
@@ -362,21 +382,23 @@ button { cursor: pointer; }
   display: block;
   width: 100%;
   height: auto;
-  filter: drop-shadow(0 26px 52px rgba(23, 105, 255, .20));
-  animation: floaty 9s ease-in-out infinite alternate;
+  filter: drop-shadow(0 26px 52px rgba(23, 105, 255, .18));
+  animation: floaty 11s ease-in-out infinite alternate;
 }
 @keyframes floaty {
-  from { transform: translateY(-6px); }
-  to { transform: translateY(8px); }
+  from { transform: translateY(-5px); }
+  to { transform: translateY(7px); }
 }
 .hero-orbit .orbit,
 .hero-orbit .hand {
   transform-origin: 50% 50%;
   transform-box: view-box;
 }
-.hero-orbit .orbit-a { animation: spin 72s linear infinite; }
-.hero-orbit .orbit-b { animation: spin 48s linear infinite reverse; }
-.hero-orbit .orbit-c { animation: spin 96s linear infinite; }
+/* Coprime periods keep the satellites from re-forming the same pattern, and
+   tangential speed falls with radius so the outer ring reads as the calmest. */
+.hero-orbit .orbit-a { animation: spin 124s linear infinite; }
+.hero-orbit .orbit-b { animation: spin 89s linear infinite reverse; }
+.hero-orbit .orbit-c { animation: spin 61s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Decorative hint that more content sits below the fold. */
@@ -1200,7 +1222,7 @@ button { cursor: pointer; }
   .hero-badge { font-size: 12px; padding: 6px 13px; }
   .hero-copy h1 { margin-top: 12px; font-size: clamp(28px, 2.8vw, 38px); }
   .hero-copy p { margin-top: 10px; font-size: 15px; }
-  .hero-art { width: min(50%, 225px); margin-top: 18px; }
+  .hero-art { width: min(56%, 250px); margin-top: 18px; }
   .panel { padding: 20px; }
   .panel-title { margin-bottom: 12px; }
   .field { margin-top: 10px; }
@@ -1973,60 +1995,76 @@ checkClockSkew();
 tick();
 `;
 
-const SVG_COPY_ICON = `<svg class="ic ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5.5 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v.5"/></svg><svg class="ic ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>`;
+// The back sheet ends exactly on the front sheet's left and top edges, so the
+// two tuck together without the sliver of gap the usual copy glyph leaves.
+const SVG_COPY_ICON = `<svg class="ico ic ic-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11.5" height="11.5" rx="2.6"/><path d="M9 15.5H5.7a2.2 2.2 0 0 1-2.2-2.2V5.7a2.2 2.2 0 0 1 2.2-2.2h7.6a2.2 2.2 0 0 1 2.2 2.2V9"/></svg><svg class="ico ic ic-check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5.2 12.6 4.4 4.4 9.2-9.6"/></svg>`;
 
-const SVG_EYE_ICON = `<svg class="ic ic-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><svg class="ic ic-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/><path d="m4.5 3.5 15 17"/></svg>`;
+const SVG_EYE_ICON = `<svg class="ico ic ic-eye" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.6 12S6.2 5.6 12 5.6 21.4 12 21.4 12 17.8 18.4 12 18.4 2.6 12 2.6 12Z"/><circle cx="12" cy="12" r="3.1"/></svg><svg class="ico ic ic-eye-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.6 12S6.2 5.6 12 5.6 21.4 12 21.4 12 17.8 18.4 12 18.4 2.6 12 2.6 12Z"/><circle cx="12" cy="12" r="3.1"/><path d="m3.8 3.8 16.4 16.4"/></svg>`;
 
-const SVG_CHEVRON = `<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg>`;
+const SVG_CHEVRON = `<svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6.2 9.6 5.8 5.8 5.8-5.8"/></svg>`;
 
 const SVG_GITHUB = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.17-.02-2.12-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.73.81 1.18 1.83 1.18 3.09 0 4.41-2.69 5.38-5.26 5.66.41.36.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A11.52 11.52 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>`;
 
 // The dial is a real clock: #handHour/#handMin/#handSec are rotated by
 // CLIENT_JS to the visitor's local (physical) time.
+// Every dashed ring divides its own circumference exactly (84 / 120 / 60 / 12
+// segments), so the pattern closes without a seam; the half-dash dashoffset
+// centres a segment on 3 o'clock and therefore on all four cardinal points.
+// Recompute the gap as 2*PI*r/count - dash if a radius changes.
 const SVG_HERO_ORBIT = `<svg class="hero-orbit" viewBox="0 0 520 520" fill="none" aria-hidden="true">
 <defs>
 <linearGradient id="gOrbit" x1="0" y1="0" x2="520" y2="520" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f7dff"/><stop offset="1" stop-color="#8a6bff"/></linearGradient>
 <radialGradient id="gLens" cx="0.5" cy="0.4" r="0.78"><stop offset="0" stop-color="#8fc0ff" stop-opacity=".96"/><stop offset=".55" stop-color="#3f86ff" stop-opacity=".84"/><stop offset="1" stop-color="#7a5af8" stop-opacity=".58"/></radialGradient>
+<radialGradient id="gVignette" cx=".5" cy=".5" r=".5"><stop offset=".74" stop-color="#0a265f" stop-opacity="0"/><stop offset="1" stop-color="#0a265f" stop-opacity=".13"/></radialGradient>
 </defs>
 <g class="orbit orbit-a">
-<circle cx="260" cy="260" r="238" stroke="url(#gOrbit)" stroke-opacity=".34" stroke-width="1.5" stroke-dasharray="3 14"/>
-<circle cx="498" cy="260" r="7" fill="url(#gOrbit)"/>
-<circle cx="498" cy="260" r="13" stroke="url(#gOrbit)" stroke-opacity=".4"/>
+<circle cx="260" cy="260" r="232" stroke="url(#gOrbit)" stroke-opacity=".34" stroke-width="1.35" stroke-dasharray="2.9 14.4536" stroke-dashoffset="1.45"/>
+<circle cx="492" cy="260" r="14" fill="url(#gOrbit)" fill-opacity=".12"/>
+<circle cx="492" cy="260" r="12.4" stroke="url(#gOrbit)" stroke-opacity=".34" stroke-width="1.1"/>
+<circle cx="492" cy="260" r="5.6" fill="url(#gOrbit)"/>
+<circle cx="88.95" cy="103.26" r="2.7" fill="url(#gOrbit)" fill-opacity=".6"/>
+<circle cx="409.13" cy="437.72" r="2.2" fill="url(#gOrbit)" fill-opacity=".48"/>
 </g>
 <g class="orbit orbit-b">
-<circle cx="260" cy="260" r="192" stroke="url(#gOrbit)" stroke-opacity=".3" stroke-width="1.2" stroke-dasharray="2 10"/>
-<circle cx="260" cy="68" r="5" fill="#2dd4bf"/>
+<circle cx="260" cy="260" r="190" stroke="url(#gOrbit)" stroke-opacity=".28" stroke-width="1.1" stroke-dasharray="1.6 8.3484" stroke-dashoffset=".8"/>
+<circle cx="260" cy="70" r="10.6" fill="#2dd4bf" fill-opacity=".14"/>
+<circle cx="260" cy="70" r="4.4" fill="#2dd4bf"/>
+<circle cx="102.48" cy="366.25" r="2.4" fill="url(#gOrbit)" fill-opacity=".5"/>
 </g>
 <g class="orbit orbit-c">
-<circle cx="260" cy="260" r="158" stroke="url(#gOrbit)" stroke-opacity=".38" stroke-width="1"/>
-<circle cx="102" cy="260" r="4" fill="#9b8cff"/>
+<circle cx="260" cy="260" r="152" stroke="url(#gOrbit)" stroke-opacity=".3" stroke-width="1"/>
+<circle cx="260" cy="260" r="152" stroke="url(#gOrbit)" stroke-opacity=".2" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="88 867.04" stroke-dashoffset="-389.52"/>
+<circle cx="260" cy="260" r="152" stroke="url(#gOrbit)" stroke-opacity=".45" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="34 921.04" stroke-dashoffset="-443.52"/>
+<circle cx="108" cy="260" r="9.4" fill="#9b8cff" fill-opacity=".16"/>
+<circle cx="108" cy="260" r="3.9" fill="#9b8cff"/>
 </g>
-<circle cx="260" cy="260" r="132" stroke="url(#gOrbit)" stroke-opacity=".42" stroke-width="9" stroke-dasharray="1.5 12.32"/>
-<circle cx="60" cy="122" r="3" fill="url(#gOrbit)" fill-opacity=".7"/>
-<circle cx="468" cy="418" r="2.5" fill="url(#gOrbit)" fill-opacity=".6"/>
-<circle cx="260" cy="260" r="112" fill="url(#gLens)"/>
-<circle cx="260" cy="260" r="112" stroke="url(#gOrbit)" stroke-opacity=".55" stroke-width="1.5"/>
-<g stroke="#ffffff" stroke-opacity=".7" stroke-width="3.5" stroke-linecap="round">
-<line x1="260" y1="158" x2="260" y2="172"/>
-<line x1="362" y1="260" x2="348" y2="260"/>
-<line x1="260" y1="362" x2="260" y2="348"/>
-<line x1="158" y1="260" x2="172" y2="260"/>
+<circle cx="260" cy="260" r="125" stroke="url(#gOrbit)" stroke-opacity=".36" stroke-width="5.5" stroke-dasharray="1.3 11.79" stroke-dashoffset=".65"/>
+<circle cx="260" cy="260" r="123" stroke="url(#gOrbit)" stroke-opacity=".5" stroke-width="9.5" stroke-dasharray="2.1 62.3026" stroke-dashoffset="1.05"/>
+<circle cx="260" cy="260" r="108" fill="url(#gLens)"/>
+<circle cx="260" cy="260" r="108" fill="url(#gVignette)"/>
+<circle cx="260" cy="260" r="108" stroke="url(#gOrbit)" stroke-opacity=".5" stroke-width="1.4"/>
+<circle cx="260" cy="260" r="108" stroke="#ffffff" stroke-opacity=".2" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="188.5 490.09" stroke-dashoffset="-414.69"/>
+<g stroke="#ffffff" stroke-opacity=".78" stroke-width="3.4" stroke-linecap="round">
+<line x1="260" y1="164" x2="260" y2="180"/>
+<line x1="356" y1="260" x2="340" y2="260"/>
+<line x1="260" y1="356" x2="260" y2="340"/>
+<line x1="164" y1="260" x2="180" y2="260"/>
 </g>
 <g stroke="#ffffff" stroke-opacity=".4" stroke-width="2" stroke-linecap="round">
-<line x1="311" y1="171.7" x2="304" y2="183.8"/>
-<line x1="348.3" y1="209" x2="336.2" y2="216"/>
-<line x1="348.3" y1="311" x2="336.2" y2="304"/>
-<line x1="311" y1="348.3" x2="304" y2="336.2"/>
-<line x1="209" y1="348.3" x2="216" y2="336.2"/>
-<line x1="171.7" y1="311" x2="183.8" y2="304"/>
-<line x1="171.7" y1="209" x2="183.8" y2="216"/>
-<line x1="209" y1="171.7" x2="216" y2="183.8"/>
+<line x1="308" y1="176.86" x2="303" y2="185.52"/>
+<line x1="343.14" y1="212" x2="334.48" y2="217"/>
+<line x1="343.14" y1="308" x2="334.48" y2="303"/>
+<line x1="308" y1="343.14" x2="303" y2="334.48"/>
+<line x1="212" y1="343.14" x2="217" y2="334.48"/>
+<line x1="176.86" y1="308" x2="185.52" y2="303"/>
+<line x1="176.86" y1="212" x2="185.52" y2="217"/>
+<line x1="212" y1="176.86" x2="217" y2="185.52"/>
 </g>
-<line id="handHour" class="hand" x1="260" y1="260" x2="260" y2="204" stroke="#ffffff" stroke-opacity=".95" stroke-width="6" stroke-linecap="round"/>
-<line id="handMin" class="hand" x1="260" y1="260" x2="260" y2="176" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
-<line id="handSec" class="hand" x1="260" y1="274" x2="260" y2="164" stroke="#ffd166" stroke-width="2" stroke-linecap="round"/>
-<circle cx="260" cy="260" r="6.5" fill="#ffffff"/>
-<circle cx="260" cy="260" r="2.6" fill="#1f6fe8"/>
+<line id="handHour" class="hand" x1="260" y1="260" x2="260" y2="206" stroke="#ffffff" stroke-opacity=".95" stroke-width="5.8" stroke-linecap="round"/>
+<line id="handMin" class="hand" x1="260" y1="260" x2="260" y2="180" stroke="#ffffff" stroke-width="4.2" stroke-linecap="round"/>
+<g id="handSec" class="hand"><line x1="260" y1="277" x2="260" y2="166" stroke="#ffd166" stroke-width="1.8" stroke-linecap="round"/><circle cx="260" cy="274" r="3.4" fill="#ffd166"/></g>
+<circle cx="260" cy="260" r="6.2" fill="#ffffff"/>
+<circle cx="260" cy="260" r="2.5" fill="#1f6fe8"/>
 </svg>`;
 
 const IDLE_TOKEN_CELLS = `<span class="digit idle"><b>•</b></span><span class="digit idle"><b>•</b></span><span class="digit idle"><b>•</b></span><span class="gap" aria-hidden="true"></span><span class="digit idle"><b>•</b></span><span class="digit idle"><b>•</b></span><span class="digit idle"><b>•</b></span>`;
@@ -2052,12 +2090,12 @@ const PAGE_HTML = `<!doctype html>
   <header class="topbar">
     <div class="shell topbar-inner">
       <a class="brand" href="/">
-        <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="gBrand" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f7dff"/><stop offset="1" stop-color="#7a5af8"/></linearGradient></defs><path d="M24 3 41 9.5v12.2c0 10.4-6.8 17.6-17 21.3C13.8 39.3 7 32.1 7 21.7V9.5Z" fill="url(#gBrand)"/><circle cx="24" cy="22" r="10" fill="none" stroke="#fff" stroke-opacity=".92" stroke-width="2.4"/><path d="M24 16v6l4.2 2.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="gBrand" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f7dff"/><stop offset="1" stop-color="#7a5af8"/></linearGradient></defs><path d="M24 3 41 9.5v12.2c0 10.4-6.8 17.6-17 21.3C13.8 39.3 7 32.1 7 21.7V9.5Z" fill="url(#gBrand)"/><circle cx="24" cy="22" r="10" fill="none" stroke="#fff" stroke-opacity=".92" stroke-width="2.4"/><path d="M24 16v6h4.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span><strong>2FA</strong> Worker</span>
       </a>
       <nav class="nav" aria-label="主导航" data-i18n-label="navLabel">
         <span class="lang" aria-label="语言" data-i18n-label="langLabel"><button class="active" type="button" data-lang="zh" aria-pressed="true">中文</button><button type="button" data-lang="en" aria-pressed="false">EN</button></span>
-        <button id="themeToggle" class="theme-toggle" type="button" data-mode="auto" aria-label="主题：跟随系统" title="主题：跟随系统"><svg class="ti ti-auto" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3.8a8.2 8.2 0 0 1 0 16.4Z" fill="currentColor"/></svg><svg class="ti ti-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.6v2.6M12 18.8v2.6M2.6 12h2.6M18.8 12h2.6M5.2 5.2l1.9 1.9M16.9 16.9l1.9 1.9M18.8 5.2l-1.9 1.9M7.1 16.9l-1.9 1.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg><svg class="ti ti-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.4 13.4A8.4 8.4 0 0 1 10.6 3.6a8.4 8.4 0 1 0 9.8 9.8Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
+        <button id="themeToggle" class="theme-toggle" type="button" data-mode="auto" aria-label="主题：跟随系统" title="主题：跟随系统"><svg class="ico ti ti-auto" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M12 3.6a8.4 8.4 0 0 1 0 16.8Z" fill="currentColor"/></svg><svg class="ico ti ti-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.3"/><path d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.27 2.27M16.38 16.38l2.27 2.27M18.65 5.35l-2.27 2.27M7.62 16.38l-2.27 2.27"/></svg><svg class="ico ti ti-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.4 13.4A8.4 8.4 0 0 1 10.6 3.6a8.4 8.4 0 1 0 9.8 9.8Z"/></svg></button>
         <a class="github" href="${GITHUB_REPOSITORY_URL}" target="_blank" rel="noopener noreferrer">${SVG_GITHUB}<span data-i18n="github">GitHub</span></a>
       </nav>
     </div>
@@ -2073,8 +2111,8 @@ const PAGE_HTML = `<!doctype html>
       </div>
 
       <section class="panel reveal d3">
-        <div class="panel-title"><span class="panel-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="14.5" r="3.5"/><path d="m10.8 12 8.7-8.7"/><path d="m15.5 7.5 2.6 2.6"/><path d="m12.8 10.2 1.8 1.8"/></svg></span><span data-i18n="panelTitle">生成 TOTP 验证码</span><span class="panel-tag" aria-hidden="true">RFC 6238</span></div>
-        <div id="driftWarn" class="drift-warn" role="status" hidden><span class="note-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.5V12l3 1.8"/></svg></span><span id="driftWarnText"></span></div>
+        <div class="panel-title"><span class="panel-ic" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><circle cx="8.3" cy="15.7" r="3.9"/><path d="m11.1 12.9 8.4-8.4"/><path d="m16.2 7.8 2.4 2.4"/><path d="m13.7 10.3 2.1 2.1"/></svg></span><span data-i18n="panelTitle">生成 TOTP 验证码</span><span class="panel-tag" aria-hidden="true">RFC 6238</span></div>
+        <div id="driftWarn" class="drift-warn" role="status" hidden><span class="note-ic" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12h3.4"/></svg></span><span id="driftWarnText"></span></div>
         <div class="field">
           <label for="secret"><span data-i18n="secretLabel">TOTP 密钥</span></label>
           <div class="input-wrap dual"><input id="secret" autocomplete="off" spellcheck="false" value="" aria-describedby="secret-help secret-error" type="password" placeholder="粘贴 Base32 TOTP 密钥，或打开 /#/tok/YOUR_SECRET 自动填入" data-i18n-placeholder="secretPlaceholder"><button id="toggleSecret" class="icon-button reveal-toggle" type="button" aria-pressed="false" aria-label="显示密钥" title="显示密钥" data-i18n-title="showSecret">${SVG_EYE_ICON}</button><button id="copySecret" class="icon-button" type="button" aria-label="复制密钥" title="复制密钥" data-i18n-title="copySecret">${SVG_COPY_ICON}</button></div>
@@ -2102,7 +2140,7 @@ const PAGE_HTML = `<!doctype html>
             <label class="advanced-field"><span data-i18n="periodLabel">周期（秒）</span><input id="period" type="number" inputmode="numeric" min="5" max="300" step="1" value="30"></label>
           </div>
         </details>
-        <button id="generate" class="primary" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2.5 5.5 13H11l-1 8.5L17.5 11H12Z"/></svg><span data-i18n="generate">生成验证码</span></button>
+        <button id="generate" class="primary" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.3 2.7 5.6 13.5h5.5l-1 7.8 7.7-10.8h-5.5Z"/></svg><span data-i18n="generate">生成验证码</span></button>
         <div class="result-card">
           <div class="result-main">
             <button id="token" class="token" type="button" aria-live="polite" aria-label="点击复制验证码" title="点击复制验证码" data-i18n-title="tokenAria" data-copyable="false" data-value="" aria-disabled="true">${IDLE_TOKEN_CELLS}</button>
@@ -2117,19 +2155,19 @@ const PAGE_HTML = `<!doctype html>
         <p id="status" class="sr-only" aria-live="polite" aria-atomic="true"></p>
       </section>
 
-      <div class="scroll-cue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9.5 6 6 6-6"/></svg></div>
+      <div class="scroll-cue" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="m6.2 9.6 5.8 5.8 5.8-5.8"/></svg></div>
     </section>
 
     <section class="lower-grid">
       <section id="api" class="panel panel-api reveal d4">
-        <div class="panel-title"><span class="panel-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8.5 9-3.5 3 3.5 3"/><path d="m15.5 9 3.5 3-3.5 3"/><path d="M13 7.5 11 16.5"/></svg></span><span data-i18n="apiTitle">JSON API</span><span class="panel-chips" aria-hidden="true"><span class="chip">GET</span><span class="chip chip-post">POST</span></span></div>
+        <div class="panel-title"><span class="panel-ic" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="m8.4 8.2-4.2 3.8 4.2 3.8"/><path d="m15.6 8.2 4.2 3.8-4.2 3.8"/><path d="M13.5 6.4 10.5 17.6"/></svg></span><span data-i18n="apiTitle">JSON API</span><span class="panel-chips" aria-hidden="true"><span class="chip">GET</span><span class="chip chip-post">POST</span></span></div>
         <p class="api-desc" data-i18n="apiDesc">推荐使用 POST /api/totp 获取当前 TOTP 验证码。</p>
         <div class="field">
           <label for="endpoint" data-i18n="endpointLabel">接口地址</label>
           <div class="input-wrap"><input id="endpoint" readonly value="" placeholder="输入密钥后自动生成 /tok/YOUR_SECRET" data-i18n-placeholder="endpointPlaceholder"><button id="copyEndpoint" class="icon-button" type="button" aria-label="复制接口" title="复制接口" data-i18n-title="copyEndpoint">${SVG_COPY_ICON}</button></div>
         </div>
         <div class="field">
-          <label><span class="label-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5c-2 0-2.5 1-2.5 2.5v2c0 1.5-.7 2.3-2 3 1.3.7 2 1.5 2 3v2c0 1.5.5 2.5 2.5 2.5"/><path d="M15 4.5c2 0 2.5 1 2.5 2.5v2c0 1.5.7 2.3 2 3-1.3.7-2 1.5-2 3v2c0 1.5-.5 2.5-2.5 2.5"/></svg></span><span data-i18n="returnLabel">返回结果（application/json）</span></label>
+          <label><span class="label-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M9.2 4.2c-2.1 0-2.6 1.05-2.6 2.6v2.1c0 1.55-.75 2.4-2.1 3.1 1.35.7 2.1 1.55 2.1 3.1v2.1c0 1.55.5 2.6 2.6 2.6"/><path d="M14.8 4.2c2.1 0 2.6 1.05 2.6 2.6v2.1c0 1.55.75 2.4 2.1 3.1-1.35.7-2.1 1.55-2.1 3.1v2.1c0 1.55-.5 2.6-2.6 2.6"/></svg></span><span data-i18n="returnLabel">返回结果（application/json）</span></label>
           <div class="code-box">
             <div class="code-head"><span class="code-dot d-r" aria-hidden="true"></span><span class="code-dot d-y" aria-hidden="true"></span><span class="code-dot d-g" aria-hidden="true"></span><span class="code-lang" aria-hidden="true">application/json</span><button id="copyJson" class="icon-button inline" type="button" aria-label="复制 JSON" title="复制 JSON" data-i18n-title="copyJson">${SVG_COPY_ICON}</button></div>
             <div class="code-body">
@@ -2139,19 +2177,19 @@ const PAGE_HTML = `<!doctype html>
             </div>
           </div>
         </div>
-        <div class="api-note-box"><span class="note-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 11v5"/><path d="M12 7.6v.2"/></svg></span><span data-i18n="apiNote">POST /api/totp 更适合自动化；URL secret 接口仅建议用于兼容旧工具或临时测试。</span></div>
+        <div class="api-note-box"><span class="note-ic" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 11.4v4.8"/><path d="M12 7.9v.2"/></svg></span><span data-i18n="apiNote">POST /api/totp 更适合自动化；URL secret 接口仅建议用于兼容旧工具或临时测试。</span></div>
       </section>
 
       <section class="feature-grid" id="guide">
-      <div class="feature reveal d4"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 19.5 5v6c0 4.8-3.2 8.2-7.5 9.5C7.7 19.2 4.5 15.8 4.5 11V5Z"/><circle cx="12" cy="11" r="4.2"/><path d="M12 8.8V11l1.6 1"/></svg></span><div><h3 data-i18n="featureTotpTitle">即时 TOTP 验证码</h3><p data-i18n="featureTotpText">生成有效的 6 位数字验证码，实时倒计时确保使用时效性。</p></div></div>
-      <div class="feature f-teal reveal d4"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8.5 9-3.5 3 3.5 3"/><path d="m15.5 9 3.5 3-3.5 3"/><path d="M13 7.5 11 16.5"/></svg></span><div><h3 data-i18n="featureApiTitle">JSON API</h3><p data-i18n="featureApiText">简单、快速、轻量的 API 设计，适合自动化和集成。</p></div></div>
-      <div class="feature f-orange reveal d5"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18.5a4.5 4.5 0 0 1-.4-9A6 6 0 0 1 18.7 11a3.8 3.8 0 0 1-.9 7.5Z"/><path d="m12.5 11.5-2 3h3l-2 3"/></svg></span><div><h3 data-i18n="featureCfTitle">运行在 Cloudflare Workers</h3><p data-i18n="featureCfText">全球边缘性能，构建速度快，可靠性高。</p></div></div>
-      <div class="feature f-violet reveal d5"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7" ry="2.8"/><path d="M5 5.5v13c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-13"/><path d="M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8"/></svg></span><div><h3 data-i18n="featureDbTitle">无需数据库</h3><p data-i18n="featureDbText">无状态设计，无需存储、无设置、无需维护。</p></div></div>
+      <div class="feature reveal d4"><span class="feature-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2.6 19.6 5.4v5.5c0 4.6-3 7.9-7.6 9.5-4.6-1.6-7.6-4.9-7.6-9.5V5.4Z"/><circle cx="12" cy="11.1" r="4.3"/><path d="M12 8.7v2.4h2.2"/></svg></span><div><h3 data-i18n="featureTotpTitle">即时 TOTP 验证码</h3><p data-i18n="featureTotpText">生成有效的 6 位数字验证码，实时倒计时确保使用时效性。</p></div></div>
+      <div class="feature f-teal reveal d4"><span class="feature-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="m8.4 8.2-4.2 3.8 4.2 3.8"/><path d="m15.6 8.2 4.2 3.8-4.2 3.8"/><path d="M13.5 6.4 10.5 17.6"/></svg></span><div><h3 data-i18n="featureApiTitle">JSON API</h3><p data-i18n="featureApiText">简单、快速、轻量的 API 设计，适合自动化和集成。</p></div></div>
+      <div class="feature f-orange reveal d5"><span class="feature-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M6.3 13.5A6.2 6.2 0 1 1 15.1 6.1h1.5a3.95 3.95 0 0 1 .45 7.87"/><path d="m12.35 10.6-2.65 4.5h3.5l-2.6 4.5"/></svg></span><div><h3 data-i18n="featureCfTitle">运行在 Cloudflare Workers</h3><p data-i18n="featureCfText">全球边缘性能，构建速度快，可靠性高。</p></div></div>
+      <div class="feature f-violet reveal d5"><span class="feature-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><ellipse cx="12" cy="6.2" rx="7.3" ry="3"/><path d="M4.7 6.2v11.6c0 1.66 3.27 3 7.3 3s7.3-1.34 7.3-3V6.2"/><path d="M4.7 12c0 1.66 3.27 3 7.3 3s7.3-1.34 7.3-3"/></svg></span><div><h3 data-i18n="featureDbTitle">无需数据库</h3><p data-i18n="featureDbText">无状态设计，无需存储、无设置、无需维护。</p></div></div>
       </section>
     </section>
 
     <section id="security" class="warning">
-      <span class="warning-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20.2H2Z"/><path d="M12 9.5V15"/><path d="M12 17.4v.2"/></svg></span>
+      <span class="warning-mark" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M10.62 4.15c.61-1.05 2.15-1.05 2.76 0l7.83 13.5c.62 1.06-.15 2.4-1.38 2.4H4.17c-1.23 0-2-1.34-1.38-2.4Z"/><path d="M12 9.8v4.6"/><path d="M12 17.5v.2"/></svg></span>
       <div><strong data-i18n="warningTitle">仅用于测试和自动化用途</strong><span data-i18n="warningText">请勿公开泄露生产环境的密钥。您需要对密钥的安全性负责。</span></div>
     </section>
 
