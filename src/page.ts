@@ -136,7 +136,10 @@ body::before {
     radial-gradient(42% 38% at 16% 14%, var(--aurora-a), transparent 70%),
     radial-gradient(36% 34% at 86% 10%, var(--aurora-b), transparent 70%),
     radial-gradient(48% 42% at 52% 98%, var(--aurora-c), transparent 72%);
-  animation: aurora 44s ease-in-out infinite alternate;
+  /* Decorative loops advance in discrete steps, about 15 per second (here 330
+     per 22 s keyframe segment). Motion this slow looks the same, but the
+     compositor no longer has to redraw on every display refresh. */
+  animation: aurora 44s steps(330) infinite alternate;
 }
 body::after {
   content: "";
@@ -170,6 +173,7 @@ button { cursor: pointer; }
   outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
+html { scroll-padding-top: calc(var(--topbar-h) + 16px); }
 .sr-only {
   position: absolute;
   width: 1px;
@@ -250,11 +254,15 @@ button { cursor: pointer; }
 }
 .lang {
   display: inline-flex;
-  overflow: hidden;
   border: 1px solid var(--border-2);
   border-radius: 12px;
   background: var(--surface);
 }
+.lang button:first-child { border-radius: 11px 0 0 11px; }
+.lang button:last-child { border-radius: 0 11px 11px 0; }
+.lang button:focus-visible { position: relative; z-index: 1; }
+.brand span,
+.lang button { white-space: nowrap; }
 .lang button {
   min-width: 58px;
   min-height: 42px;
@@ -339,16 +347,25 @@ button { cursor: pointer; }
   letter-spacing: .02em;
 }
 .pulse-dot {
+  position: relative;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--accent);
-  animation: pulse 2.4s ease-out infinite;
 }
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 var(--focus); }
-  70% { box-shadow: 0 0 0 10px transparent; }
-  100% { box-shadow: 0 0 0 0 transparent; }
+/* The halo is a scaled, fading pseudo-element: transform and opacity stay on
+   the compositor, whereas an animated box-shadow repaints every frame. */
+.pulse-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--focus);
+  animation: pulse-ring 2.4s steps(25) infinite;
+}
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 1; }
+  70%, 100% { transform: scale(3.5); opacity: 0; }
 }
 /* background-clip: text paints only inside the padding box, and line-height
    1.08 leaves the last line's descender ~0.11em below it -- enough to slice the
@@ -388,7 +405,7 @@ button { cursor: pointer; }
   width: 100%;
   height: auto;
   filter: drop-shadow(0 26px 52px rgba(23, 105, 255, .18));
-  animation: floaty 11s ease-in-out infinite alternate;
+  animation: floaty 11s steps(165) infinite alternate;
 }
 @keyframes floaty {
   from { transform: translateY(-5px); }
@@ -401,10 +418,17 @@ button { cursor: pointer; }
 }
 /* Coprime periods keep the satellites from re-forming the same pattern, and
    tangential speed falls with radius so the outer ring reads as the calmest. */
-.hero-orbit .orbit-a { animation: spin 124s linear infinite; }
-.hero-orbit .orbit-b { animation: spin 89s linear infinite reverse; }
-.hero-orbit .orbit-c { animation: spin 61s linear infinite; }
+.hero-orbit .orbit-a { animation: spin 124s steps(1860) infinite; }
+.hero-orbit .orbit-b { animation: spin 89s steps(1335) infinite reverse; }
+.hero-orbit .orbit-c { animation: spin 61s steps(915) infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+/* Outside reduced motion the clock hands are CSS animations; the second hand
+   keeps the 8-updates-per-second cadence of the old script loop. Script only
+   sets a negative animation-delay from the local time (syncClockAnimations). */
+.hero-orbit .hand { animation: spin linear infinite; }
+#handSec { animation-duration: 60s; animation-timing-function: steps(480); }
+#handMin { animation-duration: 3600s; animation-timing-function: steps(3600); }
+#handHour { animation-duration: 43200s; animation-timing-function: steps(720); }
 
 /* Decorative hint that more content sits below the fold. */
 .scroll-cue {
@@ -422,7 +446,7 @@ button { cursor: pointer; }
   color: var(--text-3);
   box-shadow: var(--shadow);
   pointer-events: none;
-  animation: cue-bob 2.4s ease-in-out infinite;
+  animation: cue-bob 2.4s steps(18) infinite;
 }
 .scroll-cue svg { width: 17px; height: 17px; }
 @keyframes cue-bob {
@@ -431,8 +455,9 @@ button { cursor: pointer; }
 }
 
 /* ---------- entry reveal ---------- */
+/* Slide only: text that starts at opacity 0 is invisible for up to 1.2 s and
+   is skipped as a Largest Contentful Paint candidate. */
 .reveal {
-  opacity: 0;
   transform: translateY(16px);
   animation: fade-up .8s cubic-bezier(.2, .7, .3, 1) forwards;
 }
@@ -442,7 +467,7 @@ button { cursor: pointer; }
 .d4 { animation-delay: .32s; }
 .d5 { animation-delay: .40s; }
 @keyframes fade-up {
-  to { opacity: 1; transform: none; }
+  to { transform: none; }
 }
 
 /* ---------- panels ---------- */
@@ -481,6 +506,7 @@ button { cursor: pointer; }
   font-size: 19px;
   font-weight: 900;
 }
+.panel-title h2 { margin: 0; font: inherit; }
 .panel-ic {
   width: 36px;
   height: 36px;
@@ -508,7 +534,7 @@ button { cursor: pointer; }
   padding: 5px 9px;
   border-radius: 7px;
   background: var(--chip-bg);
-  color: var(--accent);
+  color: var(--token-ink);
   font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
   font-size: 11px;
   font-weight: 800;
@@ -540,10 +566,26 @@ button { cursor: pointer; }
 }
 .drift-warn[hidden] { display: none; }
 .drift-warn .note-ic { color: var(--warning-icon); }
+#driftWarnText { flex: 1; }
+.drift-fix {
+  flex: none;
+  align-self: center;
+  padding: 5px 11px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.drift-fix[aria-pressed="true"] { background: var(--chip-bg); }
+.drift-fix:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ---------- fields ---------- */
 .field { margin-top: 14px; }
-.field label {
+.field label,
+.field .field-label {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -609,7 +651,10 @@ button { cursor: pointer; }
 .icon-button:focus-visible {
   background: var(--chip-bg);
   color: var(--accent);
-  outline: none;
+}
+.icon-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 .icon-button:active { transform: translateY(1px); }
 .icon-button .ic { width: 19px; height: 19px; }
@@ -685,7 +730,7 @@ button { cursor: pointer; }
   color: var(--text-3);
   transition: transform .25s ease;
 }
-.advanced[open] .chev { transform: rotate(180deg); }
+.advanced[open] > summary .chev { transform: rotate(180deg); }
 .advanced[open] summary { border-bottom: 1px solid var(--border); }
 .advanced-grid {
   display: grid;
@@ -733,7 +778,7 @@ button { cursor: pointer; }
   outline: none;
 }
 
-/* ---------- generate button ---------- */
+/* ---------- primary action (copy code) ---------- */
 .primary {
   width: 100%;
   min-height: 52px;
@@ -759,6 +804,38 @@ button { cursor: pointer; }
 }
 .primary:active { transform: translateY(0) scale(.995); }
 .primary svg { width: 19px; height: 19px; }
+.primary .ic-check { display: none; }
+.primary.copied .ic-copy { display: none; }
+.primary.copied .ic-check { display: block; }
+/* Stays focusable while there is no code; a click points to the secret field. */
+.primary[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: .55;
+  box-shadow: none;
+  transform: none;
+  filter: none;
+}
+/* Visible copy feedback; the same text goes to the polite #status region. */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 40;
+  padding: 9px 16px;
+  border-radius: 999px;
+  color: var(--on-accent);
+  background: var(--accent);
+  box-shadow: 0 10px 24px var(--focus);
+  font-size: 13.5px;
+  font-weight: 800;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 8px);
+  transition: opacity .2s ease, transform .2s ease;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.compat { margin-top: 14px; }
+.compat .compat-body { padding: 12px 15px 14px; }
 
 /* ---------- token instrument ---------- */
 .result-card {
@@ -851,7 +928,9 @@ button { cursor: pointer; }
   stroke: var(--accent);
   stroke-width: 7;
   stroke-linecap: round;
-  transition: stroke-dashoffset 1s linear, stroke .4s ease;
+  /* No stroke-dashoffset transition: an SVG stroke can only animate on the
+     main thread, so the ring moves once per tick instead (see setRing). */
+  transition: stroke .4s ease;
 }
 .ring-fg.noanim { transition: none; }
 .timer-inner {
@@ -945,7 +1024,7 @@ button { cursor: pointer; }
   line-height: 1.85;
   font-size: 13.5px;
 }
-.code-line span:first-child { color: #5d7396; }
+.code-line span:first-child { color: #7e93b5; }
 .code-line span:last-child {
   min-width: 0;
   overflow-wrap: anywhere;
@@ -1183,7 +1262,7 @@ button { cursor: pointer; }
   .advanced-grid { grid-template-columns: 1fr; gap: 9px; }
   .brand { font-size: 19px; gap: 9px; }
   .brand-mark { width: 33px; height: 33px; }
-  .github span { display: none; }
+  .github span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
   .lang button { min-width: 42px; padding: 0 8px; }
   .lead { padding: 14px 0 0; }
   .hero-badge { font-size: 11.5px; padding: 6px 12px; }
@@ -1218,9 +1297,14 @@ button { cursor: pointer; }
   .primary { min-height: 50px; }
 }
 @media (max-width: 380px) {
-  .brand { font-size: 18px; }
+  .topbar-inner { gap: 6px; }
+  .nav { gap: 5px; }
+  .brand { font-size: 16px; gap: 6px; }
+  .brand-mark { width: 28px; height: 28px; }
   .lang button { min-width: 40px; padding: 0 7px; }
   .github { padding: 0 2px; }
+  .token.many { gap: 2px; }
+  .token.many .digit { width: clamp(22px, 7.6vw, 36px); }
 }
 
 /* Short desktop windows: compress vertical rhythm so the generator panel
@@ -1284,9 +1368,181 @@ button { cursor: pointer; }
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
   }
-  .reveal { opacity: 1; transform: none; }
+  .reveal { transform: none; }
 }
 `;
+
+// UI strings for both languages. The server renders the page in the visitor's
+// language from these, and CLIENT_JS embeds the same table for switching.
+export const I18N = {
+  zh: {
+    pageTitle: "2FA Worker - 生成 TOTP 验证码",
+    navLabel: "主导航",
+    langLabel: "语言",
+    heroBadge: "RFC 6238 标准 · 全球边缘网络",
+    heroTitle: "即时生成 TOTP 验证码",
+    heroDesc: "根据 TOTP 密钥计算 6 位 2FA 验证码。<br>通过快速 JSON API 进行自动化与集成。",
+    panelTitle: "生成 TOTP 验证码",
+    secretLabel: "TOTP 密钥",
+    secretHelp: "支持 Base32 字符 A-Z 和 2-7；空格、连字符和末尾 = 会自动忽略。",
+    secretPlaceholder: "粘贴 Base32 TOTP 密钥，或打开 /#/tok/YOUR_SECRET 自动填入",
+    copySecret: "复制密钥",
+    showSecret: "显示密钥",
+    hideSecret: "隐藏密钥",
+    otpauthLabel: "otpauth:// 链接（可选）",
+    otpauthHelp: "粘贴后会自动填充密钥与高级选项。",
+    otpauthPlaceholder: "otpauth://totp/Issuer:account?secret=YOUR_SECRET",
+    copyOtpauth: "复制链接",
+    advancedLabel: "高级选项",
+    algorithmLabel: "哈希算法",
+    digitsLabel: "验证码位数",
+    periodLabel: "周期（秒）",
+    copyCode: "复制验证码",
+    tokenAria: "点击复制验证码",
+    tokenAriaValue: "验证码 {token}，点击复制",
+    tokenAriaIdle: "暂无验证码",
+    tokenLive: "新验证码 {token}",
+    timerValueText: "剩余 {remaining} 秒",
+    otpauthNotTotp: "只支持 otpauth://totp/ 链接；HOTP（计数器）链接无法按时间生成验证码",
+    otpauthUnsupported: "链接参数不受支持：算法需为 SHA1/SHA256/SHA512，位数 6–8，周期 5–300 秒",
+    otpauthImported: "已导入：{label}",
+    featuresHeading: "核心特性",
+    timerAria: "验证码剩余时间",
+    seconds: "秒",
+    remaining: "剩余",
+    idle: "新代码将在 <b>--</b> 秒后生成",
+    next: "新代码将在 <b>{remaining}</b> 秒后生成",
+    nextCode: "下一个验证码：<b>{token}</b>",
+    apiTitle: "JSON API",
+    apiDesc: "推荐使用 POST /api/totp 获取当前 TOTP 验证码。",
+    endpointLabel: "接口地址",
+    endpointPlaceholder: "输入密钥后自动生成 /tok/YOUR_SECRET",
+    copyEndpoint: "复制接口",
+    requestLabel: "请求示例",
+    copyRequest: "复制请求",
+    compatLabel: "兼容接口（GET /tok/…）",
+    compatNote: "URL 中的密钥可能进入日志和浏览器历史，仅用于兼容旧工具或临时测试。",
+    fragmentHistoryNote: "通过 /#/tok/ 链接读入的密钥仍会保留在浏览器历史中，请勿用这种链接打开生产环境的密钥。",
+    returnLabel: "返回结果（application/json）",
+    copyJson: "复制 JSON",
+    apiNote: "POST /api/totp 更适合自动化；URL secret 接口仅建议用于兼容旧工具或临时测试。",
+    featureTotpTitle: "即时 TOTP 验证码",
+    featureTotpText: "生成有效的 6 位数字验证码，实时倒计时确保使用时效性。",
+    featureApiTitle: "JSON API",
+    featureApiText: "简单、快速、轻量的 API 设计，适合自动化和集成。",
+    featureCfTitle: "运行在 Cloudflare Workers",
+    featureCfText: "全球边缘性能，构建速度快，可靠性高。",
+    featureDbTitle: "无需数据库",
+    featureDbText: "无状态设计，无需存储、无设置、无需维护。",
+    warningTitle: "仅用于测试和自动化用途",
+    warningText: "请勿公开泄露生产环境的密钥。您需要对密钥的安全性负责。",
+    clockSkewSlow: "本机时钟比服务器慢约 {seconds} 秒，验证码可能无效。请校准系统时间，或改为按服务器时间计算。",
+    clockSkewFast: "本机时钟比服务器快约 {seconds} 秒，验证码可能无效。请校准系统时间，或改为按服务器时间计算。",
+    clockSkewCorrected: "验证码已按服务器时间计算（本机时钟相差约 {seconds} 秒）。校准系统时间后可以关闭。",
+    clockSkewUseServer: "按服务器时间计算",
+    footerCopy: "<span class=\"footer-line\">© {year} 2FA Worker</span><span class=\"footer-line\">基于 <a href=\"https://developers.cloudflare.com/workers/\" rel=\"noreferrer\">Cloudflare Workers</a> 构建</span><span class=\"footer-line\">Web Crypto</span>",
+    github: "GitHub",
+    themeAuto: "主题：跟随系统",
+    themeLight: "主题：浅色",
+    themeDark: "主题：深色",
+    normalizeMissing: "请输入密钥",
+    normalizeTooLong: "密钥过长",
+    normalizeTooShort: "密钥太短，无法解码出有效密钥",
+    normalizeInvalid: "密钥只能包含 Base32 字符 A-Z 和 2-7",
+    invalidOtpAuth: "otpauth:// 链接格式无效",
+    invalidPeriod: "周期必须在 5 到 300 秒之间",
+    copySuccess: "已复制到剪贴板",
+    copyEmpty: "当前没有可复制的内容",
+    copyFail: "复制失败，请手动选择内容",
+    invalidFragment: "链接片段中的密钥编码无效",
+  },
+  en: {
+    pageTitle: "2FA Worker - Generate TOTP codes",
+    navLabel: "Primary navigation",
+    langLabel: "Language",
+    heroBadge: "RFC 6238 standard · Global edge network",
+    heroTitle: "Generate TOTP codes instantly",
+    heroDesc: "Calculate 6-digit 2FA codes from a TOTP secret.<br>Automate and integrate through a fast JSON API.",
+    panelTitle: "Generate TOTP code",
+    secretLabel: "TOTP secret",
+    secretHelp: "Use Base32 characters A-Z and 2-7; spaces, hyphens, and trailing = are ignored.",
+    secretPlaceholder: "Paste a Base32 TOTP secret, or open /#/tok/YOUR_SECRET to fill it",
+    copySecret: "Copy secret",
+    showSecret: "Show secret",
+    hideSecret: "Hide secret",
+    otpauthLabel: "otpauth:// link (optional)",
+    otpauthHelp: "Pasting a link fills in the secret and advanced options automatically.",
+    otpauthPlaceholder: "otpauth://totp/Issuer:account?secret=YOUR_SECRET",
+    copyOtpauth: "Copy link",
+    advancedLabel: "Advanced options",
+    algorithmLabel: "Hash algorithm",
+    digitsLabel: "Code digits",
+    periodLabel: "Period (seconds)",
+    copyCode: "Copy code",
+    tokenAria: "Click to copy code",
+    tokenAriaValue: "Code {token}, click to copy",
+    tokenAriaIdle: "No code yet",
+    tokenLive: "New code {token}",
+    timerValueText: "{remaining} seconds left",
+    otpauthNotTotp: "Only otpauth://totp/ links are supported; HOTP (counter) links cannot be generated from time",
+    otpauthUnsupported: "Unsupported link parameters: algorithm must be SHA1/SHA256/SHA512, 6-8 digits, period 5-300 s",
+    otpauthImported: "Imported: {label}",
+    featuresHeading: "Key features",
+    timerAria: "Code time remaining",
+    seconds: "sec",
+    remaining: "left",
+    idle: "New code in <b>--</b> s",
+    next: "New code in <b>{remaining}</b> s",
+    nextCode: "Next code: <b>{token}</b>",
+    apiTitle: "JSON API",
+    apiDesc: "Use POST /api/totp for automated TOTP code retrieval.",
+    endpointLabel: "Endpoint",
+    endpointPlaceholder: "Generated after entering a secret: /tok/YOUR_SECRET",
+    copyEndpoint: "Copy endpoint",
+    requestLabel: "Request example",
+    copyRequest: "Copy request",
+    compatLabel: "Compatibility endpoint (GET /tok/…)",
+    compatNote: "Secrets in URLs can end up in logs and browser history; use this only for legacy tools or quick tests.",
+    fragmentHistoryNote: "A secret opened from a /#/tok/ link stays in your browser history; don't open production secrets this way.",
+    returnLabel: "Response (application/json)",
+    copyJson: "Copy JSON",
+    apiNote: "POST /api/totp is preferred for automation; URL-secret endpoints are for compatibility or temporary testing only.",
+    featureTotpTitle: "Instant TOTP code",
+    featureTotpText: "Generate a valid 6-digit code with a live countdown for timing confidence.",
+    featureApiTitle: "JSON API",
+    featureApiText: "Simple, fast, lightweight API design for automation and integration.",
+    featureCfTitle: "Runs on Cloudflare Workers",
+    featureCfText: "Global edge performance with fast builds and high reliability.",
+    featureDbTitle: "No database required",
+    featureDbText: "Stateless by design: no storage, no setup, and no maintenance.",
+    warningTitle: "For testing and automation only",
+    warningText: "Do not expose production secrets publicly. You are responsible for keeping secrets safe.",
+    clockSkewSlow: "Your device clock is about {seconds} s behind the server, so codes may be rejected. Sync your system time, or compute codes with server time.",
+    clockSkewFast: "Your device clock is about {seconds} s ahead of the server, so codes may be rejected. Sync your system time, or compute codes with server time.",
+    clockSkewCorrected: "Codes now use server time (your clock is off by about {seconds} s). Turn this off once your system time is synced.",
+    clockSkewUseServer: "Use server time",
+    footerCopy: "<span class=\"footer-line\">© {year} 2FA Worker</span><span class=\"footer-line\">Built on <a href=\"https://developers.cloudflare.com/workers/\" rel=\"noreferrer\">Cloudflare Workers</a></span><span class=\"footer-line\">Web Crypto</span>",
+    github: "GitHub",
+    themeAuto: "Theme: follow system",
+    themeLight: "Theme: light",
+    themeDark: "Theme: dark",
+    normalizeMissing: "Please enter a secret",
+    normalizeTooLong: "Secret is too long",
+    normalizeTooShort: "Secret is too short to decode into a key",
+    normalizeInvalid: "Secret can only contain Base32 characters A-Z and 2-7",
+    invalidOtpAuth: "otpauth:// link format is invalid",
+    invalidPeriod: "Period must be between 5 and 300 seconds",
+    copySuccess: "Copied to clipboard",
+    copyEmpty: "Nothing to copy yet",
+    copyFail: "Copy failed. Please select the text manually.",
+    invalidFragment: "Secret encoding in the URL fragment is invalid",
+  },
+} as const;
+
+export type Lang = keyof typeof I18N;
+
+// Escaped "<" keeps any string from closing the inline <script>.
+const I18N_JSON = JSON.stringify(I18N, null, 2).replace(/</g, "\\u003c");
 
 export const CLIENT_JS = `
 const maxSecretLength = 256;
@@ -1294,7 +1550,7 @@ const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const hashName = { SHA1: "SHA-1", SHA256: "SHA-256", SHA512: "SHA-512" };
 const RING_CIRCUMFERENCE = 2 * Math.PI * 44; // must match r="44" on #ringFg
 const CLOCK_SKEW_WARN_MS = 10000;
-let clockSkewSeconds = 0;
+let clockSkewMs = 0;
 let cachedSecret = "";
 let cachedAlgorithm = "";
 let cachedKey = null;
@@ -1319,14 +1575,21 @@ const els = {
   error: document.querySelector("#error"),
   secretError: document.querySelector("#secret-error"),
   status: document.querySelector("#status"),
-  generate: document.querySelector("#generate"),
+  copyCode: document.querySelector("#copyCode"),
+  request: document.querySelector("#request"),
+  copyRequest: document.querySelector("#copyRequest"),
+  secretNote: document.querySelector("#secret-note"),
+  toast: document.querySelector("#toast"),
   copySecret: document.querySelector("#copySecret"),
   toggleSecret: document.querySelector("#toggleSecret"),
   copyOtpauth: document.querySelector("#copyOtpauth"),
   copyEndpoint: document.querySelector("#copyEndpoint"),
   copyJson: document.querySelector("#copyJson"),
+  tokenLive: document.querySelector("#tokenLive"),
+  otpauthMeta: document.querySelector("#otpauth-meta"),
   driftWarn: document.querySelector("#driftWarn"),
   driftWarnText: document.querySelector("#driftWarnText"),
+  driftFix: document.querySelector("#driftFix"),
   themeToggle: document.querySelector("#themeToggle"),
   handHour: document.querySelector("#handHour"),
   handMin: document.querySelector("#handMin"),
@@ -1334,138 +1597,7 @@ const els = {
   langButtons: document.querySelectorAll("[data-lang]")
 };
 
-const i18n = {
-  zh: {
-    pageTitle: "2FA Worker - 生成 TOTP 验证码",
-    navLabel: "主导航",
-    langLabel: "语言",
-    heroBadge: "RFC 6238 标准 · 全球边缘网络",
-    heroTitle: "即时生成 TOTP 验证码",
-    heroDesc: "根据 TOTP 密钥计算 6 位 2FA 验证码。<br>通过快速 JSON API 进行自动化与集成。",
-    panelTitle: "生成 TOTP 验证码",
-    secretLabel: "TOTP 密钥",
-    secretHelp: "支持 Base32 字符 A-Z 和 2-7；空格、连字符和末尾 = 会自动忽略。",
-    secretPlaceholder: "粘贴 Base32 TOTP 密钥，或打开 /#/tok/YOUR_SECRET 自动填入",
-    copySecret: "复制密钥",
-    showSecret: "显示密钥",
-    hideSecret: "隐藏密钥",
-    otpauthLabel: "otpauth:// 链接（可选）",
-    otpauthHelp: "粘贴后会自动填充密钥与高级选项。",
-    otpauthPlaceholder: "otpauth://totp/Issuer:account?secret=YOUR_SECRET",
-    copyOtpauth: "复制链接",
-    advancedLabel: "高级选项",
-    algorithmLabel: "哈希算法",
-    digitsLabel: "验证码位数",
-    periodLabel: "周期（秒）",
-    generate: "生成验证码",
-    tokenAria: "点击复制验证码",
-    timerAria: "验证码剩余时间",
-    seconds: "秒",
-    remaining: "剩余",
-    idle: "新代码将在 <b>--</b> 秒后生成",
-    next: "新代码将在 <b>{remaining}</b> 秒后生成",
-    apiTitle: "JSON API",
-    apiDesc: "推荐使用 POST /api/totp 获取当前 TOTP 验证码。",
-    endpointLabel: "接口地址",
-    endpointPlaceholder: "输入密钥后自动生成 /tok/YOUR_SECRET",
-    copyEndpoint: "复制接口",
-    returnLabel: "返回结果（application/json）",
-    copyJson: "复制 JSON",
-    apiNote: "POST /api/totp 更适合自动化；URL secret 接口仅建议用于兼容旧工具或临时测试。",
-    featureTotpTitle: "即时 TOTP 验证码",
-    featureTotpText: "生成有效的 6 位数字验证码，实时倒计时确保使用时效性。",
-    featureApiTitle: "JSON API",
-    featureApiText: "简单、快速、轻量的 API 设计，适合自动化和集成。",
-    featureCfTitle: "运行在 Cloudflare Workers",
-    featureCfText: "全球边缘性能，构建速度快，可靠性高。",
-    featureDbTitle: "无需数据库",
-    featureDbText: "无状态设计，无需存储、无设置、无需维护。",
-    warningTitle: "仅用于测试和自动化用途",
-    warningText: "请勿公开泄露生产环境的密钥。您需要对密钥的安全性负责。",
-    clockSkewWarn: "本机时钟与服务器相差约 {seconds} 秒，生成的验证码可能无效，请校准系统时间。",
-    footerCopy: "<span class=\\"footer-line\\">© {year} 2FA Worker</span><span class=\\"footer-line\\">基于 <a href=\\"https://developers.cloudflare.com/workers/\\" rel=\\"noreferrer\\">Cloudflare Workers</a> 构建</span><span class=\\"footer-line\\">Web Crypto</span>",
-    github: "GitHub",
-    themeAuto: "主题：跟随系统",
-    themeLight: "主题：浅色",
-    themeDark: "主题：深色",
-    normalizeMissing: "请输入 Secret",
-    normalizeTooLong: "Secret 过长",
-    normalizeTooShort: "Secret 太短，无法解码出有效密钥",
-    normalizeInvalid: "Secret 只能包含 Base32 字符 A-Z 和 2-7",
-    invalidUrlEncoding: "Secret URL 编码无效",
-    invalidOtpAuth: "otpauth:// 链接格式无效",
-    invalidPeriod: "Period 必须是 5 到 300 秒",
-    copySuccess: "已复制到剪贴板",
-    copyEmpty: "当前没有可复制的内容",
-    copyFail: "复制失败，请手动选择内容",
-    invalidFragment: "URL fragment 中的 Secret 编码无效"
-  },
-  en: {
-    pageTitle: "2FA Worker - Generate TOTP codes",
-    navLabel: "Primary navigation",
-    langLabel: "Language",
-    heroBadge: "RFC 6238 standard · Global edge network",
-    heroTitle: "Generate TOTP codes instantly",
-    heroDesc: "Calculate 6-digit 2FA codes from a TOTP secret.<br>Automate and integrate through a fast JSON API.",
-    panelTitle: "Generate TOTP code",
-    secretLabel: "TOTP secret",
-    secretHelp: "Use Base32 characters A-Z and 2-7; spaces, hyphens, and trailing = are ignored.",
-    secretPlaceholder: "Paste a Base32 TOTP secret, or open /#/tok/YOUR_SECRET to fill it",
-    copySecret: "Copy secret",
-    showSecret: "Show secret",
-    hideSecret: "Hide secret",
-    otpauthLabel: "otpauth:// link (optional)",
-    otpauthHelp: "Pasting a link fills in the secret and advanced options automatically.",
-    otpauthPlaceholder: "otpauth://totp/Issuer:account?secret=YOUR_SECRET",
-    copyOtpauth: "Copy link",
-    advancedLabel: "Advanced options",
-    algorithmLabel: "Hash algorithm",
-    digitsLabel: "Code digits",
-    periodLabel: "Period (seconds)",
-    generate: "Generate code",
-    tokenAria: "Click to copy code",
-    timerAria: "Code time remaining",
-    seconds: "sec",
-    remaining: "left",
-    idle: "Next code will be generated in <b>--</b> seconds",
-    next: "Next code will be generated in <b>{remaining}</b> seconds",
-    apiTitle: "JSON API",
-    apiDesc: "Use POST /api/totp for automated TOTP code retrieval.",
-    endpointLabel: "Endpoint",
-    endpointPlaceholder: "Generated after entering a secret: /tok/YOUR_SECRET",
-    copyEndpoint: "Copy endpoint",
-    returnLabel: "Response (application/json)",
-    copyJson: "Copy JSON",
-    apiNote: "POST /api/totp is preferred for automation; URL-secret endpoints are for compatibility or temporary testing only.",
-    featureTotpTitle: "Instant TOTP code",
-    featureTotpText: "Generate a valid 6-digit code with a live countdown for timing confidence.",
-    featureApiTitle: "JSON API",
-    featureApiText: "Simple, fast, lightweight API design for automation and integration.",
-    featureCfTitle: "Runs on Cloudflare Workers",
-    featureCfText: "Global edge performance with fast builds and high reliability.",
-    featureDbTitle: "No database required",
-    featureDbText: "Stateless by design: no storage, no setup, and no maintenance.",
-    warningTitle: "For testing and automation only",
-    warningText: "Do not expose production secrets publicly. You are responsible for keeping secrets safe.",
-    clockSkewWarn: "Your device clock differs from the server by about {seconds} seconds; generated codes may be rejected. Please sync your system time.",
-    footerCopy: "<span class=\\"footer-line\\">© {year} 2FA Worker</span><span class=\\"footer-line\\">Built on <a href=\\"https://developers.cloudflare.com/workers/\\" rel=\\"noreferrer\\">Cloudflare Workers</a></span><span class=\\"footer-line\\">Web Crypto</span>",
-    github: "GitHub",
-    themeAuto: "Theme: follow system",
-    themeLight: "Theme: light",
-    themeDark: "Theme: dark",
-    normalizeMissing: "Please enter a Secret",
-    normalizeTooLong: "Secret is too long",
-    normalizeTooShort: "Secret is too short to decode into a key",
-    normalizeInvalid: "Secret can only contain Base32 characters A-Z and 2-7",
-    invalidUrlEncoding: "Secret URL encoding is invalid",
-    invalidOtpAuth: "otpauth:// link format is invalid",
-    invalidPeriod: "Period must be between 5 and 300 seconds",
-    copySuccess: "Copied to clipboard",
-    copyEmpty: "Nothing to copy yet",
-    copyFail: "Copy failed. Please select the text manually.",
-    invalidFragment: "Secret encoding in the URL fragment is invalid"
-  }
-};
+const i18n = ${I18N_JSON};
 
 function t(key) {
   return (i18n[currentLang] && i18n[currentLang][key]) || i18n.zh[key] || key;
@@ -1476,9 +1608,8 @@ function detectInitialLanguage() {
     const saved = localStorage.getItem("language");
     if (saved === "zh" || saved === "en") return saved;
   } catch {}
-  const preferred = String(navigator.language || "").toLowerCase();
-  if (!preferred) return "zh";
-  return preferred.startsWith("zh") ? "zh" : "en";
+  // The server already rendered the page in the visitor's Accept-Language.
+  return document.documentElement.lang === "en" ? "en" : "zh";
 }
 
 function storedThemeMode() {
@@ -1518,7 +1649,10 @@ function applyTheme() {
 }
 
 function cycleTheme() {
-  const order = ["auto", "light", "dark"];
+  // From "auto" go to the opposite of the system theme first, so the first
+  // click always changes what the page looks like.
+  const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const order = systemDark ? ["auto", "light", "dark"] : ["auto", "dark", "light"];
   const next = order[(order.indexOf(storedThemeMode()) + 1) % order.length];
   try {
     if (next === "auto") {
@@ -1558,14 +1692,34 @@ function applyTranslations() {
   }
   updateThemeButton();
   updateDriftWarning();
+  if (actionErrorKey) els.error.textContent = t(actionErrorKey);
+  if (secretNoteKey) els.secretNote.textContent = t(secretNoteKey);
+  if (importedShown) els.otpauthMeta.textContent = t("otpauthImported").replace("{label}", importedShown);
 }
 
 // Both setters skip identical writes so the per-second tick cannot make
-// assertive live regions re-announce the same message to screen readers.
+// live regions re-announce the same message to screen readers.
+// Field errors wait for a typing pause so the first keystroke does not flash
+// "too short" (a single Base32 character decodes to zero bytes).
+let fieldErrorTimer = 0;
+let pendingFieldError = "";
 function setFieldError(message = "") {
-  if (els.secretError && els.secretError.textContent !== message) {
-    els.secretError.textContent = message;
+  if (!els.secretError) return;
+  if (!message) {
+    window.clearTimeout(fieldErrorTimer);
+    pendingFieldError = "";
+    if (els.secretError.textContent) els.secretError.textContent = "";
+    els.secret.removeAttribute("aria-invalid");
+    return;
   }
+  if (message === els.secretError.textContent || message === pendingFieldError) return;
+  pendingFieldError = message;
+  window.clearTimeout(fieldErrorTimer);
+  fieldErrorTimer = window.setTimeout(() => {
+    pendingFieldError = "";
+    els.secretError.textContent = message;
+    els.secret.setAttribute("aria-invalid", "true");
+  }, document.activeElement === els.secret ? 800 : 0);
 }
 
 /**
@@ -1574,10 +1728,31 @@ function setFieldError(message = "") {
  * user edits an input or the action succeeds. tick() only clears messages it
  * wrote itself (tracked via tickOwnsError).
  */
+let actionErrorKey = "";
 function setActionError(message = "") {
+  actionErrorKey = "";
   if (els.error.textContent !== message) {
     els.error.textContent = message;
   }
+}
+
+// Keyed errors are re-rendered in the new language by applyTranslations().
+function setActionErrorKey(key) {
+  setActionError(t(key));
+  actionErrorKey = key;
+}
+
+let secretNoteKey = "";
+function showSecretNote(key) {
+  secretNoteKey = key;
+  els.secretNote.textContent = t(key);
+  els.secretNote.hidden = false;
+}
+function hideSecretNote() {
+  if (!secretNoteKey) return;
+  secretNoteKey = "";
+  els.secretNote.textContent = "";
+  els.secretNote.hidden = true;
 }
 
 function setLanguage(lang) {
@@ -1590,49 +1765,77 @@ function setLanguage(lang) {
 }
 
 function normalizeBase32(input) {
-  let secret = String(input || "").trim();
-  if (secret.includes("%")) {
-    try {
-      secret = decodeURIComponent(secret);
-    } catch {
-      throw new Error(t("invalidUrlEncoding"));
-    }
-  }
-  secret = secret.replace(/[\\s-]/g, "").replace(/=+$/g, "").toUpperCase();
+  const secret = String(input || "").replace(/[\\s-]/g, "").replace(/=+$/g, "");
   if (!secret) throw new Error(t("normalizeMissing"));
   if (secret.length > maxSecretLength) throw new Error(t("normalizeTooLong"));
-  if (!/^[A-Z2-7]+$/.test(secret)) throw new Error(t("normalizeInvalid"));
-  return secret;
+  if (!/^[A-Za-z2-7]+$/.test(secret)) throw new Error(t("normalizeInvalid"));
+  return secret.toUpperCase();
 }
 
-function applyOtpAuth() {
+function applyOtpAuth(final = false) {
   setActionError("");
+  els.otpauthMeta.textContent = "";
   const value = els.otpauth.value.trim();
   if (!value) return;
+  // While typing, wait for a complete-looking link; report problems on paste/blur.
+  if (!final && !/^otpauth:\\/\\/[^/?#]+\\/[^?#]*\\?.*secret=/i.test(value)) return;
+  let url;
   try {
-    const url = new URL(value);
-    if (url.protocol !== "otpauth:") return;
-    const secret = url.searchParams.get("secret");
-    if (!secret) return;
-    els.secret.value = secret;
-    const algorithm = String(url.searchParams.get("algorithm") || "").replace(/-/g, "").toUpperCase();
-    if (algorithm === "SHA1" || algorithm === "SHA256" || algorithm === "SHA512") {
-      els.algorithm.value = algorithm;
-    }
-    const digits = url.searchParams.get("digits");
-    if (digits === "6" || digits === "7" || digits === "8") {
-      els.digits.value = digits;
-    }
-    const period = Number(url.searchParams.get("period"));
-    if (Number.isInteger(period) && period >= 5 && period <= 300) {
-      els.period.value = String(period);
-    }
-    if (els.algorithm.value !== "SHA1" || els.digits.value !== "6" || els.period.value !== "30") {
-      els.advanced.open = true;
-    }
+    url = new URL(value);
   } catch {
-    setActionError(t("invalidOtpAuth"));
+    setActionErrorKey("invalidOtpAuth");
+    return;
   }
+  const type = (value.match(/^otpauth:\\/\\/([^/?#]+)/i) || [])[1] || "";
+  if (url.protocol !== "otpauth:" || !type) return setActionErrorKey("invalidOtpAuth");
+  if (type.toLowerCase() !== "totp") return setActionErrorKey("otpauthNotTotp");
+  const secret = url.searchParams.get("secret");
+  if (!secret) return setActionErrorKey("invalidOtpAuth");
+  // Key URI Format defaults: absent parameters mean SHA1 / 6 digits / 30 s.
+  const algorithm = String(url.searchParams.get("algorithm") || "SHA1").replace(/-/g, "").toUpperCase();
+  const digits = url.searchParams.get("digits") || "6";
+  const period = Number(url.searchParams.get("period") || 30);
+  if (!hashName[algorithm] || !/^[678]$/.test(digits) || !Number.isInteger(period) || period < 5 || period > 300) {
+    return setActionErrorKey("otpauthUnsupported");
+  }
+  els.secret.value = secret;
+  els.algorithm.value = algorithm;
+  els.digits.value = digits;
+  els.period.value = String(period);
+  els.advanced.open = algorithm !== "SHA1" || digits !== "6" || period !== 30;
+  const rawLabel = (value.match(/^otpauth:\\/\\/[^/?#]+\\/([^?#]*)/i) || [])[1] || "";
+  let label = rawLabel;
+  try {
+    label = decodeURIComponent(rawLabel);
+  } catch {}
+  const issuer = url.searchParams.get("issuer");
+  const shown = issuer && !label.startsWith(issuer + ":") ? issuer + " · " + label : label.replace(":", " · ");
+  importedLabel = label;
+  importedIssuer = issuer || "";
+  importedShown = shown;
+  if (shown) els.otpauthMeta.textContent = t("otpauthImported").replace("{label}", shown);
+  // The secret now sits in the masked field; keep the plaintext link out of view.
+  if (final) els.otpauth.value = "";
+}
+
+// "Copy link" rebuilds the link from the current settings, so it can never
+// carry a stale secret; label and issuer come from the last imported link.
+let importedLabel = "";
+let importedIssuer = "";
+let importedShown = "";
+function currentOtpAuthLink() {
+  let secret;
+  try {
+    secret = normalizeBase32(els.secret.value);
+  } catch {
+    return "";
+  }
+  const params = new URLSearchParams({ secret });
+  if (importedIssuer) params.set("issuer", importedIssuer);
+  if (els.algorithm.value !== "SHA1") params.set("algorithm", els.algorithm.value);
+  if (els.digits.value !== "6") params.set("digits", els.digits.value);
+  if (Number(els.period.value) !== 30) params.set("period", els.period.value);
+  return "otpauth://totp/" + encodeURIComponent(importedLabel || "2FA Worker") + "?" + params.toString();
 }
 
 function base32ToBytes(input) {
@@ -1665,19 +1868,16 @@ function counterToBytes(counter) {
   return bytes;
 }
 
+// The cache holds the importKey *promise* and is written synchronously together
+// with its (secret, algorithm) tag, so overlapping ticks can never pair a new tag
+// with a key that was imported for the previous algorithm.
 async function cryptoKeyFor(secret, algorithm) {
-  if (cachedKey && cachedSecret === secret && cachedAlgorithm === algorithm) {
-    return cachedKey;
+  if (!cachedKey || cachedSecret !== secret || cachedAlgorithm !== algorithm) {
+    const bytes = base32ToBytes(secret);
+    cachedKey = crypto.subtle.importKey("raw", bytes, { name: "HMAC", hash: { name: hashName[algorithm] } }, false, ["sign"]);
+    cachedSecret = secret;
+    cachedAlgorithm = algorithm;
   }
-  cachedSecret = secret;
-  cachedAlgorithm = algorithm;
-  cachedKey = await crypto.subtle.importKey(
-    "raw",
-    base32ToBytes(secret),
-    { name: "HMAC", hash: { name: hashName[algorithm] } },
-    false,
-    ["sign"]
-  );
   return cachedKey;
 }
 
@@ -1716,14 +1916,14 @@ function resetRing(offset) {
   els.ringFg.classList.remove("noanim");
 }
 
-// The ring animates toward the *next* second boundary with a 1s linear
-// transition, so motion is continuous instead of stepping once per tick.
+// The ring steps once per tick, in sync with the countdown digits. A period
+// rollover goes through resetRing so the colour change is instant as well.
 function setRing(remaining, period) {
   if (!els.ringFg) return;
   if (remaining > lastRemaining) {
     resetRing(RING_CIRCUMFERENCE * (1 - Math.min(1, remaining / period)));
   }
-  const target = Math.max(0, Math.min(1, (remaining - 1) / period));
+  const target = Math.max(0, Math.min(1, remaining / period));
   els.ringFg.style.strokeDashoffset = String(RING_CIRCUMFERENCE * (1 - target));
   els.timerCircle.classList.toggle("warn", remaining <= 10 && remaining > 5);
   els.timerCircle.classList.toggle("danger", remaining <= 5);
@@ -1741,20 +1941,76 @@ function endpointUrl(secret, period, digits, algorithm) {
   return location.origin + "/tok/" + secret + (query ? "?" + query : "");
 }
 
+let lastAnnounced = "";
+function setTokenName(label) {
+  if (els.token.getAttribute("aria-label") !== label) els.token.setAttribute("aria-label", label);
+}
+
+let lastTokenKey = "";
+let lastTokenValue = "";
+let nextTokenKey = "";
+let nextTokenValue = "";
+const lastText = new WeakMap();
+
+function groupDigits(token) {
+  const half = Math.ceil(token.length / 2);
+  return token.slice(0, half) + " " + token.slice(half);
+}
+
+// Derived displays follow the secret field's show/hide toggle; the copy
+// button still copies the full URL from data-full.
+function renderEndpoint(full, secret) {
+  els.endpoint.dataset.full = full;
+  const shown = !full || els.secret.type === "text" ? full : full.replace("/tok/" + secret, "/tok/" + "•".repeat(8));
+  if (els.endpoint.value !== shown) els.endpoint.value = shown;
+}
+
+// The request example never contains the secret: it is meant for a terminal,
+// where a literal secret would end up in shell history.
+function renderRequestExample() {
+  const body = { secret: "YOUR_SECRET" };
+  if (els.algorithm.value !== "SHA1") body.algorithm = els.algorithm.value;
+  if (els.digits.value !== "6") body.digits = Number(els.digits.value);
+  const period = Number(els.period.value || 30);
+  if (period !== 30 && Number.isInteger(period)) body.period = period;
+  const command = "curl -X POST " + location.origin + "/api/totp -H 'content-type: application/json' -d '" + JSON.stringify(body) + "'";
+  if (els.request.value !== command) els.request.value = command;
+}
+
+// Skips DOM writes when a tick would set the same text again.
+function setText(element, value, html = false) {
+  if (lastText.get(element) === value) return;
+  lastText.set(element, value);
+  if (html) element.innerHTML = value;
+  else element.textContent = value;
+}
+
+// Idle ticks repeat every second; skip the re-render (and resetRing's forced
+// layout) while the idle screen already shows the same message.
+let idleShown = "";
 function setIdle(message = t("idle")) {
+  lastTokenKey = "";
+  nextTokenKey = "";
+  nextTokenValue = "";
+  if (idleShown === message && lastTokenIdle) return;
+  idleShown = message;
   renderTokenCells("••••••", true);
   els.token.dataset.value = "";
   els.token.dataset.copyable = "false";
   els.token.setAttribute("aria-disabled", "true");
+  els.copyCode.setAttribute("aria-disabled", "true");
+  setTokenName(t("tokenAriaIdle"));
+  els.timerCircle.setAttribute("aria-valuetext", t("tokenAriaIdle"));
+  lastAnnounced = "";
   els.timer.textContent = "--";
   resetRing(RING_CIRCUMFERENCE);
   els.timerCircle.classList.remove("warn");
   els.timerCircle.classList.remove("danger");
   els.timerCircle.setAttribute("aria-valuenow", "0");
   lastRemaining = -1;
-  els.next.innerHTML = message;
-  els.endpoint.value = "";
-  els.jsonToken.textContent = "------";
+  setText(els.next, message, true);
+  renderEndpoint("", "");
+  setText(els.jsonToken, "------");
 }
 
 let tickTimer = 0;
@@ -1765,12 +2021,13 @@ let tickOwnsError = false;
 // visibly skips or lags the way a free-running setInterval does.
 function scheduleTick() {
   window.clearTimeout(tickTimer);
-  tickTimer = window.setTimeout(tick, 1015 - (Date.now() % 1000));
+  tickTimer = window.setTimeout(tick, 1015 - (currentTimeMs() % 1000));
 }
 
 async function tick() {
   const generation = ++tickGeneration;
   try {
+    renderRequestExample();
     if (tickOwnsError) {
       setActionError("");
       tickOwnsError = false;
@@ -1798,22 +2055,42 @@ async function tick() {
       throw new Error(t("invalidPeriod"));
     }
 
-    const now = Math.floor(Date.now() / 1000);
+    const now = Math.floor(currentTimeMs() / 1000);
     const counter = Math.floor(now / period);
     const remaining = period - (now % period);
-    const progress = Math.round((remaining / period) * 100);
-    const token = await hotp(secret, BigInt(counter), digits, algorithm);
+    // The code only changes with the counter or the inputs, not every second.
+    const tokenKey = secret + "|" + algorithm + "|" + digits + "|" + period + "|" + counter;
+    const token = tokenKey === lastTokenKey ? lastTokenValue : await hotp(secret, BigInt(counter), digits, algorithm);
+    // In the last seconds of a period, preview the code that comes next.
+    const nextKey = remaining <= 5 ? secret + "|" + algorithm + "|" + digits + "|" + period + "|" + (counter + 1) : "";
+    const nextToken = !nextKey ? "" : nextKey === nextTokenKey ? nextTokenValue : await hotp(secret, BigInt(counter + 1), digits, algorithm);
     if (generation !== tickGeneration) return;
+    lastTokenKey = tokenKey;
+    lastTokenValue = token;
+    nextTokenKey = nextKey;
+    nextTokenValue = nextToken;
+    idleShown = "";
     renderTokenCells(token, false);
     els.token.dataset.value = token;
     els.token.dataset.copyable = "true";
     els.token.setAttribute("aria-disabled", "false");
+    els.copyCode.setAttribute("aria-disabled", "false");
     els.timer.textContent = String(remaining);
     setRing(remaining, period);
-    els.timerCircle.setAttribute("aria-valuenow", String(progress));
-    els.next.innerHTML = t("next").replace("{remaining}", String(remaining));
-    els.endpoint.value = endpointUrl(secret, period, digits, algorithm);
-    els.jsonToken.textContent = token;
+    els.timerCircle.setAttribute("aria-valuemax", String(period));
+    els.timerCircle.setAttribute("aria-valuenow", String(remaining));
+    els.timerCircle.setAttribute("aria-valuetext", t("timerValueText").replace("{remaining}", String(remaining)));
+    setTokenName(t("tokenAriaValue").replace("{token}", token));
+    if (token !== lastAnnounced) {
+      lastAnnounced = token;
+      els.tokenLive.textContent = t("tokenLive").replace("{token}", token.split("").join(" "));
+    }
+    const nextLine = nextToken
+      ? t("nextCode").replace("{token}", groupDigits(nextToken))
+      : t("next").replace("{remaining}", String(remaining));
+    setText(els.next, nextLine, true);
+    renderEndpoint(endpointUrl(secret, period, digits, algorithm), secret);
+    setText(els.jsonToken, token);
   } catch (error) {
     if (generation !== tickGeneration) return;
     setIdle(t("idle"));
@@ -1828,50 +2105,64 @@ function loadUrlSecret() {
   const match = location.hash.match(/^#\\/tok\\/([^?]+)/);
   if (!match) return;
   try {
-    els.secret.value = normalizeBase32(match[1]);
+    els.secret.value = normalizeBase32(decodeURIComponent(match[1]));
+    showSecretNote("fragmentHistoryNote");
   } catch {
-    setActionError(t("invalidFragment"));
+    setActionErrorKey("invalidFragment");
   } finally {
     history.replaceState(null, "", location.pathname + location.search);
   }
 }
 
+// Codes and the countdown follow the server clock only after the user turns
+// that on; it is never applied silently and lasts for this page session.
+let useServerTime = false;
+function currentTimeMs() {
+  return Date.now() + (useServerTime ? clockSkewMs : 0);
+}
+
 /**
  * TOTP depends entirely on wall-clock agreement: a device clock off by more
  * than the period silently generates rejected codes. Compare the local clock
- * against the Date header of a same-origin /healthz response and show a
- * persistent warning when they disagree noticeably. Fails silent: offline
- * usage (local generation) must keep working.
+ * with the server time from a same-origin /healthz request and, when they
+ * disagree noticeably, say which way the device is off and offer to compute
+ * codes with server time. Fails silent: offline use must keep working.
  */
 async function checkClockSkew() {
   try {
     const started = Date.now();
     const response = await fetch("/healthz", { cache: "no-store" });
-    const dateHeader = response.headers.get("date");
-    if (!dateHeader) return;
-    const serverMs = new Date(dateHeader).getTime();
-    if (!Number.isFinite(serverMs)) return;
-    // +500ms: the Date header truncates to whole seconds; midpoint of the
-    // request approximates when the server stamped it.
-    const skewMs = serverMs + 500 - (started + Date.now()) / 2;
-    if (Math.abs(skewMs) < CLOCK_SKEW_WARN_MS) return;
-    clockSkewSeconds = Math.round(Math.abs(skewMs) / 1000);
-    if (els.driftWarn) {
-      els.driftWarn.hidden = false;
-      updateDriftWarning();
+    const finished = Date.now();
+    const body = await response.json().catch(() => null);
+    // Prefer the millisecond timestamp; the Date header (whole seconds, and
+    // absent under local workerd) is only a fallback.
+    let serverMs = body && Number.isFinite(body.now) ? body.now : Number.NaN;
+    if (!Number.isFinite(serverMs)) {
+      const dateHeader = response.headers.get("date");
+      serverMs = dateHeader ? new Date(dateHeader).getTime() + 500 : Number.NaN;
     }
+    if (!Number.isFinite(serverMs)) return;
+    // The midpoint of the request approximates when the server read its clock.
+    const skewMs = serverMs - (started + finished) / 2;
+    if (Math.abs(skewMs) < CLOCK_SKEW_WARN_MS) return;
+    clockSkewMs = skewMs;
+    els.driftWarn.hidden = false;
+    updateDriftWarning();
   } catch {}
 }
 
 function updateDriftWarning() {
-  if (!els.driftWarn || els.driftWarn.hidden || !els.driftWarnText) return;
-  els.driftWarnText.textContent = t("clockSkewWarn").replace("{seconds}", String(clockSkewSeconds));
+  if (els.driftWarn.hidden) return;
+  const key = useServerTime ? "clockSkewCorrected" : clockSkewMs > 0 ? "clockSkewSlow" : "clockSkewFast";
+  els.driftWarnText.textContent = t(key).replace("{seconds}", String(Math.round(Math.abs(clockSkewMs) / 1000)));
+  els.driftFix.setAttribute("aria-pressed", String(useServerTime));
 }
 
-const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+let reduceMotion = reducedMotionQuery.matches;
 
-// The hero dial is a working clock showing the visitor's local time; the
-// second hand sweeps smoothly unless reduced motion is requested.
+// The hero dial is a working clock showing the visitor's local time. This
+// script path only drives it under reduced motion (see clockLoop).
 function updateClockHands() {
   if (!els.handHour) return;
   const now = new Date();
@@ -1883,10 +2174,36 @@ function updateClockHands() {
   els.handHour.style.transform = "rotate(" + hours * 30 + "deg)";
 }
 
+// Reduced motion turns every CSS animation into a 0.001 ms one-shot, so the
+// hands are then positioned from script once per second instead.
+let clockTimer = 0;
 function clockLoop() {
+  window.clearTimeout(clockTimer);
+  if (!reduceMotion) {
+    syncClockAnimations();
+    return;
+  }
   if (!document.hidden) updateClockHands();
-  window.setTimeout(clockLoop, reduceMotion ? 1000 : 120);
+  clockTimer = window.setTimeout(clockLoop, 1000);
 }
+
+// Each hand's CSS spin starts at a negative delay equal to how far into its
+// cycle the current local time is.
+function syncClockAnimations() {
+  if (!els.handHour) return;
+  const now = new Date();
+  const seconds = now.getSeconds() + now.getMilliseconds() / 1000;
+  const minutes = now.getMinutes() + seconds / 60;
+  const hours = (now.getHours() % 12) + minutes / 60;
+  els.handSec.style.animationDelay = -seconds + "s";
+  els.handMin.style.animationDelay = -minutes * 60 + "s";
+  els.handHour.style.animationDelay = -hours * 3600 + "s";
+}
+
+reducedMotionQuery.addEventListener("change", (event) => {
+  reduceMotion = event.matches;
+  clockLoop();
+});
 
 function flashCopied(element) {
   if (!element) return;
@@ -1897,6 +2214,7 @@ function flashCopied(element) {
 // Fallback for browsers/contexts without the async clipboard API. The token
 // digits render as separate cells, so "select it manually" is not an option.
 function legacyCopy(text) {
+  const previous = document.activeElement;
   const area = document.createElement("textarea");
   area.value = text;
   area.setAttribute("readonly", "");
@@ -1909,13 +2227,28 @@ function legacyCopy(text) {
     copied = document.execCommand("copy");
   } catch {}
   area.remove();
+  if (previous && previous !== document.body) previous.focus({ preventScroll: true });
   return copied;
+}
+
+// Visible for 2 s; #status carries the same text for screen readers and is
+// cleared afterwards so a later identical message is announced again.
+let toastTimer = 0;
+function showToast(message) {
+  els.toast.textContent = message;
+  els.toast.classList.add("show");
+  els.status.textContent = message;
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    els.toast.classList.remove("show");
+    els.status.textContent = "";
+  }, 2000);
 }
 
 async function copyValue(value, trigger) {
   const text = String(value || "").trim();
   if (!text || text === "------") {
-    els.status.textContent = t("copyEmpty");
+    showToast(t("copyEmpty"));
     return;
   }
   let copied = false;
@@ -1928,9 +2261,9 @@ async function copyValue(value, trigger) {
   if (copied) {
     flashCopied(trigger);
     setActionError("");
-    els.status.textContent = t("copySuccess");
+    showToast(t("copySuccess"));
   } else {
-    setActionError(t("copyFail"));
+    setActionErrorKey("copyFail");
   }
 }
 
@@ -1940,10 +2273,27 @@ for (const el of [els.secret, els.digits, els.period, els.algorithm]) {
     setFieldError("");
     tick();
   });
-  el.addEventListener("change", tick);
 }
-els.otpauth.addEventListener("input", () => {
-  applyOtpAuth();
+// A hand-edited secret no longer matches the imported link or the fragment.
+els.secret.addEventListener("input", () => {
+  els.otpauth.value = "";
+  els.otpauthMeta.textContent = "";
+  importedLabel = "";
+  importedIssuer = "";
+  importedShown = "";
+  hideSecretNote();
+});
+els.otpauth.addEventListener("input", (event) => {
+  // A paste is a finished link: import it right away and clear the field.
+  applyOtpAuth(event.inputType === "insertFromPaste");
+  tick();
+});
+els.otpauth.addEventListener("change", () => {
+  applyOtpAuth(true);
+  tick();
+});
+window.addEventListener("hashchange", () => {
+  loadUrlSecret();
   tick();
 });
 
@@ -1951,29 +2301,56 @@ els.otpauth.addEventListener("input", () => {
 // the displayed code can be long expired when the user returns. Recompute
 // immediately on tab focus.
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) tick();
+  if (document.hidden) return;
+  tick();
+  // Animation timelines can drift from wall time across sleep or long
+  // background periods.
+  if (!reduceMotion) syncClockAnimations();
 });
 
-els.generate.addEventListener("click", () => {
-  if (!els.secret.value.trim()) {
-    setFieldError(t("normalizeMissing"));
-    els.secret.focus();
-    return;
-  }
+// The HTML is revalidatable, so the back/forward cache may restore this page
+// with the secret still filled in; clear secrets and everything derived from
+// them when the page is hidden for navigation.
+window.addEventListener("pagehide", () => {
+  els.secret.value = "";
+  els.otpauth.value = "";
+  els.otpauthMeta.textContent = "";
+  importedLabel = "";
+  importedIssuer = "";
+  importedShown = "";
+  hideSecretNote();
+  cachedKey = null;
+  cachedSecret = "";
+  setIdle();
+});
+
+els.driftFix.addEventListener("click", () => {
+  useServerTime = !useServerTime;
+  updateDriftWarning();
   tick();
 });
+
+els.copyCode.addEventListener("click", () => {
+  const value = els.token.dataset.value || "";
+  if (/^\\d{6,8}$/.test(value)) {
+    copyValue(value, els.copyCode);
+    return;
+  }
+  if (!els.secret.value.trim()) setFieldError(t("normalizeMissing"));
+  els.secret.focus();
+});
 els.copySecret.addEventListener("click", (event) => copyValue(els.secret.value, event.currentTarget));
+// Toggle button pattern: the label stays "Show secret"; aria-pressed carries the state.
 els.toggleSecret.addEventListener("click", () => {
   const show = els.secret.type === "password";
   els.secret.type = show ? "text" : "password";
   els.toggleSecret.setAttribute("aria-pressed", String(show));
-  els.toggleSecret.dataset.i18nTitle = show ? "hideSecret" : "showSecret";
-  const label = t(show ? "hideSecret" : "showSecret");
-  els.toggleSecret.title = label;
-  els.toggleSecret.setAttribute("aria-label", label);
+  // Re-render derived displays (the /tok/ URL) with the new visibility.
+  tick();
 });
-els.copyOtpauth.addEventListener("click", (event) => copyValue(els.otpauth.value, event.currentTarget));
-els.copyEndpoint.addEventListener("click", (event) => copyValue(els.endpoint.value, event.currentTarget));
+els.copyOtpauth.addEventListener("click", (event) => copyValue(currentOtpAuthLink(), event.currentTarget));
+els.copyEndpoint.addEventListener("click", (event) => copyValue(els.endpoint.dataset.full || "", event.currentTarget));
+els.copyRequest.addEventListener("click", (event) => copyValue(els.request.value, event.currentTarget));
 els.copyJson.addEventListener("click", (event) => {
   const token = els.jsonToken.textContent || "";
   copyValue(/^\\d{6,8}$/.test(token) ? '{ "token": "' + token + '" }' : "", event.currentTarget);
@@ -2084,21 +2461,28 @@ const SVG_HERO_ORBIT = `<svg class="hero-orbit" viewBox="0 0 520 520" fill="none
 
 const IDLE_TOKEN_CELLS = `<span class="digit idle"><b>•</b></span><span class="digit idle"><b>•</b></span><span class="digit idle"><b>•</b></span><span class="gap" aria-hidden="true"></span><span class="digit idle"><b>•</b></span><span class="digit idle"><b>•</b></span><span class="digit idle"><b>•</b></span>`;
 
-// Built once at module load; "__NONCE__" marks where the per-request CSP
-// nonce goes, so each request only pays for a cheap join().
-const PAGE_HTML = `<!doctype html>
-<html lang="zh-CN" data-theme="light">
+// Built once at module load and byte-identical for every request: the CSP
+// allow-lists the inline blocks by SHA-256 hash (see index.ts), so the page
+// can be revalidated with an ETag instead of being re-sent each time.
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function renderPage(lang: Lang): string {
+  const T = I18N[lang];
+  return `<!doctype html>
+<html lang="${lang === "en" ? "en" : "zh-CN"}" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>2FA Worker - 生成 TOTP 验证码</title>
+<title>${escapeHtml(T.pageTitle)}</title>
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f8ff">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#070b16">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon.png">
 <link rel="shortcut icon" type="image/png" href="/favicon.ico">
 <link rel="apple-touch-icon" sizes="192x192" href="/apple-touch-icon.png">
-<script nonce="__NONCE__">(function () { var stored = null; try { stored = localStorage.getItem("theme"); } catch (error) {} var dark = stored === "dark" || (stored !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); document.documentElement.dataset.theme = dark ? "dark" : "light"; })();</script>
-<style nonce="__NONCE__">${PAGE_CSS}</style>
+<script>(function () { var stored = null; try { stored = localStorage.getItem("theme"); } catch (error) {} var dark = stored === "dark" || (stored !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); document.documentElement.dataset.theme = dark ? "dark" : "light"; })();</script>
+<style>${PAGE_CSS}</style>
 </head>
 <body>
 <div class="page">
@@ -2108,10 +2492,10 @@ const PAGE_HTML = `<!doctype html>
         <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="gBrand" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f7dff"/><stop offset="1" stop-color="#7a5af8"/></linearGradient></defs><path d="M24 3 41 9.5v12.2c0 10.4-6.8 17.6-17 21.3C13.8 39.3 7 32.1 7 21.7V9.5Z" fill="url(#gBrand)"/><circle cx="24" cy="22" r="10" fill="none" stroke="#fff" stroke-opacity=".92" stroke-width="2.4"/><path d="M24 16v6h4.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span><strong>2FA</strong> Worker</span>
       </a>
-      <nav class="nav" aria-label="主导航" data-i18n-label="navLabel">
-        <span class="lang" aria-label="语言" data-i18n-label="langLabel"><button class="active" type="button" data-lang="zh" aria-pressed="true">中文</button><button type="button" data-lang="en" aria-pressed="false">EN</button></span>
+      <nav class="nav" aria-label="${escapeHtml(T.navLabel)}" data-i18n-label="navLabel">
+        <span class="lang" role="group" aria-label="${escapeHtml(T.langLabel)}" data-i18n-label="langLabel"><button class="active" type="button" data-lang="zh" aria-pressed="true">中文</button><button type="button" data-lang="en" aria-pressed="false">EN</button></span>
         <button id="themeToggle" class="theme-toggle" type="button" data-mode="auto" aria-label="主题：跟随系统" title="主题：跟随系统"><svg class="ico ti ti-auto" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M12 3.6a8.4 8.4 0 0 1 0 16.8Z" fill="currentColor"/></svg><svg class="ico ti ti-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.3"/><path d="M12 2.6v3.2M12 18.2v3.2M2.6 12h3.2M18.2 12h3.2M5.35 5.35l2.27 2.27M16.38 16.38l2.27 2.27M18.65 5.35l-2.27 2.27M7.62 16.38l-2.27 2.27"/></svg><svg class="ico ti ti-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.4 13.4A8.4 8.4 0 0 1 10.6 3.6a8.4 8.4 0 1 0 9.8 9.8Z"/></svg></button>
-        <a class="github" href="${GITHUB_REPOSITORY_URL}" target="_blank" rel="noopener noreferrer">${SVG_GITHUB}<span data-i18n="github">GitHub</span></a>
+        <a class="github" href="${GITHUB_REPOSITORY_URL}" target="_blank" rel="noopener noreferrer">${SVG_GITHUB}<span data-i18n="github">${escapeHtml(T.github)}</span></a>
       </nav>
     </div>
   </header>
@@ -2119,55 +2503,58 @@ const PAGE_HTML = `<!doctype html>
   <main class="shell">
     <section class="lead">
       <div class="hero-copy">
-        <span class="hero-badge reveal"><i class="pulse-dot" aria-hidden="true"></i><span data-i18n="heroBadge">RFC 6238 标准 · 全球边缘网络</span></span>
-        <h1 class="reveal d1" data-i18n="heroTitle">即时生成 TOTP 验证码</h1>
-        <p class="reveal d2" data-i18n-html="heroDesc">根据 TOTP 密钥计算 6 位 2FA 验证码。<br>通过快速 JSON API 进行自动化与集成。</p>
+        <span class="hero-badge reveal"><i class="pulse-dot" aria-hidden="true"></i><span data-i18n="heroBadge">${escapeHtml(T.heroBadge)}</span></span>
+        <h1 class="reveal d1" data-i18n="heroTitle">${escapeHtml(T.heroTitle)}</h1>
+        <p class="reveal d2" data-i18n-html="heroDesc">${T.heroDesc}</p>
         <div class="hero-art reveal d2" aria-hidden="true">${SVG_HERO_ORBIT}</div>
       </div>
 
       <section class="panel reveal d3">
-        <div class="panel-title"><span class="panel-ic" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><circle cx="8.3" cy="15.7" r="3.9"/><path d="m11.1 12.9 8.4-8.4"/><path d="m16.2 7.8 2.4 2.4"/><path d="m13.7 10.3 2.1 2.1"/></svg></span><span data-i18n="panelTitle">生成 TOTP 验证码</span><span class="panel-tag" aria-hidden="true">RFC 6238</span></div>
-        <div id="driftWarn" class="drift-warn" role="status" hidden><span class="note-ic" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12h3.4"/></svg></span><span id="driftWarnText"></span></div>
+        <div class="panel-title"><span class="panel-ic" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><circle cx="8.3" cy="15.7" r="3.9"/><path d="m11.1 12.9 8.4-8.4"/><path d="m16.2 7.8 2.4 2.4"/><path d="m13.7 10.3 2.1 2.1"/></svg></span><h2 data-i18n="panelTitle">${escapeHtml(T.panelTitle)}</h2><span class="panel-tag" aria-hidden="true">RFC 6238</span></div>
+        <div id="driftWarn" class="drift-warn" role="status" hidden><span class="note-ic" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12h3.4"/></svg></span><span id="driftWarnText"></span><button id="driftFix" class="drift-fix" type="button" aria-pressed="false" data-i18n="clockSkewUseServer">${escapeHtml(T.clockSkewUseServer)}</button></div>
         <div class="field">
-          <label for="secret"><span data-i18n="secretLabel">TOTP 密钥</span></label>
-          <div class="input-wrap dual"><input id="secret" autocomplete="off" spellcheck="false" value="" aria-describedby="secret-help secret-error" type="password" placeholder="粘贴 Base32 TOTP 密钥，或打开 /#/tok/YOUR_SECRET 自动填入" data-i18n-placeholder="secretPlaceholder"><button id="toggleSecret" class="icon-button reveal-toggle" type="button" aria-pressed="false" aria-label="显示密钥" title="显示密钥" data-i18n-title="showSecret">${SVG_EYE_ICON}</button><button id="copySecret" class="icon-button" type="button" aria-label="复制密钥" title="复制密钥" data-i18n-title="copySecret">${SVG_COPY_ICON}</button></div>
-          <p id="secret-help" class="field-hint" data-i18n="secretHelp">支持 Base32 字符 A-Z 和 2-7；空格、连字符和末尾 = 会自动忽略。</p>
-          <p id="secret-error" class="field-error" role="alert" aria-live="assertive"></p>
+          <label for="secret"><span data-i18n="secretLabel">${escapeHtml(T.secretLabel)}</span></label>
+          <div class="input-wrap dual"><input id="secret" autocomplete="off" spellcheck="false" value="" aria-describedby="secret-help secret-error" type="password" placeholder="${escapeHtml(T.secretPlaceholder)}" data-i18n-placeholder="secretPlaceholder"><button id="toggleSecret" class="icon-button reveal-toggle" type="button" aria-pressed="false" aria-label="${escapeHtml(T.showSecret)}" title="${escapeHtml(T.showSecret)}" data-i18n-title="showSecret">${SVG_EYE_ICON}</button><button id="copySecret" class="icon-button" type="button" aria-label="${escapeHtml(T.copySecret)}" title="${escapeHtml(T.copySecret)}" data-i18n-title="copySecret">${SVG_COPY_ICON}</button></div>
+          <p id="secret-help" class="field-hint" data-i18n="secretHelp">${escapeHtml(T.secretHelp)}</p>
+          <p id="secret-error" class="field-error" aria-live="polite"></p>
+          <p id="secret-note" class="field-hint" aria-live="polite" hidden></p>
         </div>
         <div class="field">
-          <label for="otpauth"><span data-i18n="otpauthLabel">otpauth:// 链接（可选）</span></label>
-          <div class="input-wrap"><input id="otpauth" autocomplete="off" spellcheck="false" placeholder="otpauth://totp/Issuer:account?secret=YOUR_SECRET" data-i18n-placeholder="otpauthPlaceholder"><button id="copyOtpauth" class="icon-button" type="button" aria-label="复制链接" title="复制链接" data-i18n-title="copyOtpauth">${SVG_COPY_ICON}</button></div>
-          <p class="field-hint" data-i18n="otpauthHelp">粘贴后会自动填充密钥与高级选项。</p>
+          <label for="otpauth"><span data-i18n="otpauthLabel">${escapeHtml(T.otpauthLabel)}</span></label>
+          <div class="input-wrap"><input id="otpauth" autocomplete="off" spellcheck="false" placeholder="${escapeHtml(T.otpauthPlaceholder)}" data-i18n-placeholder="otpauthPlaceholder"><button id="copyOtpauth" class="icon-button" type="button" aria-label="${escapeHtml(T.copyOtpauth)}" title="${escapeHtml(T.copyOtpauth)}" data-i18n-title="copyOtpauth">${SVG_COPY_ICON}</button></div>
+          <p class="field-hint" data-i18n="otpauthHelp">${escapeHtml(T.otpauthHelp)}</p>
+          <p id="otpauth-meta" class="field-hint" aria-live="polite"></p>
         </div>
         <details id="advanced" class="advanced">
-          <summary><span data-i18n="advancedLabel">高级选项</span>${SVG_CHEVRON}</summary>
+          <summary><span data-i18n="advancedLabel">${escapeHtml(T.advancedLabel)}</span>${SVG_CHEVRON}</summary>
           <div class="advanced-grid">
-            <label class="advanced-field"><span data-i18n="algorithmLabel">哈希算法</span><span class="select-wrap"><select id="algorithm">
+            <label class="advanced-field"><span data-i18n="algorithmLabel">${escapeHtml(T.algorithmLabel)}</span><span class="select-wrap"><select id="algorithm">
               <option value="SHA1" selected>SHA1</option>
               <option value="SHA256">SHA256</option>
               <option value="SHA512">SHA512</option>
             </select>${SVG_CHEVRON}</span></label>
-            <label class="advanced-field"><span data-i18n="digitsLabel">验证码位数</span><span class="select-wrap"><select id="digits">
+            <label class="advanced-field"><span data-i18n="digitsLabel">${escapeHtml(T.digitsLabel)}</span><span class="select-wrap"><select id="digits">
               <option value="6" selected>6</option>
               <option value="7">7</option>
               <option value="8">8</option>
             </select>${SVG_CHEVRON}</span></label>
-            <label class="advanced-field"><span data-i18n="periodLabel">周期（秒）</span><input id="period" type="number" inputmode="numeric" min="5" max="300" step="1" value="30"></label>
+            <label class="advanced-field"><span data-i18n="periodLabel">${escapeHtml(T.periodLabel)}</span><input id="period" type="number" inputmode="numeric" min="5" max="300" step="1" value="30"></label>
           </div>
         </details>
-        <button id="generate" class="primary" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.3 2.7 5.6 13.5h5.5l-1 7.8 7.7-10.8h-5.5Z"/></svg><span data-i18n="generate">生成验证码</span></button>
+        <button id="copyCode" class="primary" type="button" aria-disabled="true">${SVG_COPY_ICON}<span data-i18n="copyCode">${escapeHtml(T.copyCode)}</span></button>
         <div class="result-card">
           <div class="result-main">
-            <button id="token" class="token" type="button" aria-live="polite" aria-label="点击复制验证码" title="点击复制验证码" data-i18n-title="tokenAria" data-copyable="false" data-value="" aria-disabled="true">${IDLE_TOKEN_CELLS}</button>
-            <div id="timerCircle" class="timer" role="progressbar" aria-label="验证码剩余时间" data-i18n-label="timerAria" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <button id="token" class="token" type="button" aria-label="${escapeHtml(T.tokenAria)}" title="${escapeHtml(T.tokenAria)}" data-i18n-title="tokenAria" data-copyable="false" data-value="" aria-disabled="true">${IDLE_TOKEN_CELLS}</button>
+            <div id="timerCircle" class="timer" role="progressbar" aria-label="${escapeHtml(T.timerAria)}" data-i18n-label="timerAria" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
               <svg class="ring" viewBox="0 0 100 100" aria-hidden="true"><circle class="ring-track" cx="50" cy="50" r="44"/><circle id="ringFg" class="ring-fg" cx="50" cy="50" r="44" stroke-dasharray="276.46" stroke-dashoffset="276.46"/></svg>
-              <div class="timer-inner"><b id="timer" class="timer-value">--</b><span class="timer-labels"><span data-i18n="seconds">秒</span><span data-i18n="remaining">剩余</span></span></div>
+              <div class="timer-inner"><b id="timer" class="timer-value">--</b><span class="timer-labels"><span data-i18n="seconds">${escapeHtml(T.seconds)}</span><span data-i18n="remaining">${escapeHtml(T.remaining)}</span></span></div>
             </div>
           </div>
-          <div id="next" class="next" data-i18n-html="idle">新代码将在 <b>--</b> 秒后生成</div>
+          <div id="next" class="next" data-i18n-html="idle">${T.idle}</div>
         </div>
         <p id="error" class="error" role="alert" aria-live="assertive"></p>
         <p id="status" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+        <p id="tokenLive" class="sr-only" aria-live="polite" aria-atomic="true"></p>
       </section>
 
       <div class="scroll-cue" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="m6.2 9.6 5.8 5.8 5.8-5.8"/></svg></div>
@@ -2175,50 +2562,64 @@ const PAGE_HTML = `<!doctype html>
 
     <section class="lower-grid">
       <section id="api" class="panel panel-api reveal d4">
-        <div class="panel-title"><span class="panel-ic" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="m8.4 8.2-4.2 3.8 4.2 3.8"/><path d="m15.6 8.2 4.2 3.8-4.2 3.8"/><path d="M13.5 6.4 10.5 17.6"/></svg></span><span data-i18n="apiTitle">JSON API</span><span class="panel-chips" aria-hidden="true"><span class="chip">GET</span><span class="chip chip-post">POST</span></span></div>
-        <p class="api-desc" data-i18n="apiDesc">推荐使用 POST /api/totp 获取当前 TOTP 验证码。</p>
+        <div class="panel-title"><span class="panel-ic" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="m8.4 8.2-4.2 3.8 4.2 3.8"/><path d="m15.6 8.2 4.2 3.8-4.2 3.8"/><path d="M13.5 6.4 10.5 17.6"/></svg></span><h2 data-i18n="apiTitle">${escapeHtml(T.apiTitle)}</h2><span class="panel-chips" aria-hidden="true"><span class="chip">GET</span><span class="chip chip-post">POST</span></span></div>
+        <p class="api-desc" data-i18n="apiDesc">${escapeHtml(T.apiDesc)}</p>
         <div class="field">
-          <label for="endpoint" data-i18n="endpointLabel">接口地址</label>
-          <div class="input-wrap"><input id="endpoint" readonly value="" placeholder="输入密钥后自动生成 /tok/YOUR_SECRET" data-i18n-placeholder="endpointPlaceholder"><button id="copyEndpoint" class="icon-button" type="button" aria-label="复制接口" title="复制接口" data-i18n-title="copyEndpoint">${SVG_COPY_ICON}</button></div>
+          <label for="request" data-i18n="requestLabel">${escapeHtml(T.requestLabel)}</label>
+          <div class="input-wrap"><input id="request" readonly value="" spellcheck="false"><button id="copyRequest" class="icon-button" type="button" aria-label="${escapeHtml(T.copyRequest)}" title="${escapeHtml(T.copyRequest)}" data-i18n-title="copyRequest">${SVG_COPY_ICON}</button></div>
         </div>
+        <details id="compat" class="advanced compat">
+          <summary><span data-i18n="compatLabel">${escapeHtml(T.compatLabel)}</span>${SVG_CHEVRON}</summary>
+          <div class="compat-body">
+            <label for="endpoint" class="sr-only" data-i18n="endpointLabel">${escapeHtml(T.endpointLabel)}</label>
+            <div class="input-wrap"><input id="endpoint" readonly value="" placeholder="${escapeHtml(T.endpointPlaceholder)}" data-i18n-placeholder="endpointPlaceholder"><button id="copyEndpoint" class="icon-button" type="button" aria-label="${escapeHtml(T.copyEndpoint)}" title="${escapeHtml(T.copyEndpoint)}" data-i18n-title="copyEndpoint">${SVG_COPY_ICON}</button></div>
+            <p class="field-hint" data-i18n="compatNote">${escapeHtml(T.compatNote)}</p>
+          </div>
+        </details>
         <div class="field">
-          <label><span class="label-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M9.2 4.2c-2.1 0-2.6 1.05-2.6 2.6v2.1c0 1.55-.75 2.4-2.1 3.1 1.35.7 2.1 1.55 2.1 3.1v2.1c0 1.55.5 2.6 2.6 2.6"/><path d="M14.8 4.2c2.1 0 2.6 1.05 2.6 2.6v2.1c0 1.55.75 2.4 2.1 3.1-1.35.7-2.1 1.55-2.1 3.1v2.1c0 1.55-.5 2.6-2.6 2.6"/></svg></span><span data-i18n="returnLabel">返回结果（application/json）</span></label>
-          <div class="code-box">
-            <div class="code-head"><span class="code-dot d-r" aria-hidden="true"></span><span class="code-dot d-y" aria-hidden="true"></span><span class="code-dot d-g" aria-hidden="true"></span><span class="code-lang" aria-hidden="true">application/json</span><button id="copyJson" class="icon-button inline" type="button" aria-label="复制 JSON" title="复制 JSON" data-i18n-title="copyJson">${SVG_COPY_ICON}</button></div>
+          <div class="field-label" id="jsonLabel"><span class="label-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M9.2 4.2c-2.1 0-2.6 1.05-2.6 2.6v2.1c0 1.55-.75 2.4-2.1 3.1 1.35.7 2.1 1.55 2.1 3.1v2.1c0 1.55.5 2.6 2.6 2.6"/><path d="M14.8 4.2c2.1 0 2.6 1.05 2.6 2.6v2.1c0 1.55.75 2.4 2.1 3.1-1.35.7-2.1 1.55-2.1 3.1v2.1c0 1.55-.5 2.6-2.6 2.6"/></svg></span><span data-i18n="returnLabel">${escapeHtml(T.returnLabel)}</span></div>
+          <div class="code-box" role="group" aria-labelledby="jsonLabel">
+            <div class="code-head"><span class="code-dot d-r" aria-hidden="true"></span><span class="code-dot d-y" aria-hidden="true"></span><span class="code-dot d-g" aria-hidden="true"></span><span class="code-lang" aria-hidden="true">application/json</span><button id="copyJson" class="icon-button inline" type="button" aria-label="${escapeHtml(T.copyJson)}" title="${escapeHtml(T.copyJson)}" data-i18n-title="copyJson">${SVG_COPY_ICON}</button></div>
             <div class="code-body">
-              <div class="code-line"><span>1</span><span>{</span></div>
-              <div class="code-line"><span>2</span><span>&nbsp;&nbsp;"<span class="code-key">token</span>": "<span id="jsonToken" class="green">------</span>"</span></div>
-              <div class="code-line"><span>3</span><span>}</span></div>
+              <div class="code-line"><span aria-hidden="true">1</span><span>{</span></div>
+              <div class="code-line"><span aria-hidden="true">2</span><span>&nbsp;&nbsp;"<span class="code-key">token</span>": "<span id="jsonToken" class="green">------</span>"</span></div>
+              <div class="code-line"><span aria-hidden="true">3</span><span>}</span></div>
             </div>
           </div>
         </div>
-        <div class="api-note-box"><span class="note-ic" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 11.4v4.8"/><path d="M12 7.9v.2"/></svg></span><span data-i18n="apiNote">POST /api/totp 更适合自动化；URL secret 接口仅建议用于兼容旧工具或临时测试。</span></div>
+        <div class="api-note-box"><span class="note-ic" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 11.4v4.8"/><path d="M12 7.9v.2"/></svg></span><span data-i18n="apiNote">${escapeHtml(T.apiNote)}</span></div>
       </section>
 
-      <section class="feature-grid" id="guide">
-      <div class="feature reveal d4"><span class="feature-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2.6 19.6 5.4v5.5c0 4.6-3 7.9-7.6 9.5-4.6-1.6-7.6-4.9-7.6-9.5V5.4Z"/><circle cx="12" cy="11.1" r="4.3"/><path d="M12 8.7v2.4h2.2"/></svg></span><div><h3 data-i18n="featureTotpTitle">即时 TOTP 验证码</h3><p data-i18n="featureTotpText">生成有效的 6 位数字验证码，实时倒计时确保使用时效性。</p></div></div>
-      <div class="feature f-teal reveal d4"><span class="feature-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="m8.4 8.2-4.2 3.8 4.2 3.8"/><path d="m15.6 8.2 4.2 3.8-4.2 3.8"/><path d="M13.5 6.4 10.5 17.6"/></svg></span><div><h3 data-i18n="featureApiTitle">JSON API</h3><p data-i18n="featureApiText">简单、快速、轻量的 API 设计，适合自动化和集成。</p></div></div>
-      <div class="feature f-orange reveal d5"><span class="feature-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M6.3 13.5A6.2 6.2 0 1 1 15.1 6.1h1.5a3.95 3.95 0 0 1 .45 7.87"/><path d="m12.35 10.6-2.65 4.5h3.5l-2.6 4.5"/></svg></span><div><h3 data-i18n="featureCfTitle">运行在 Cloudflare Workers</h3><p data-i18n="featureCfText">全球边缘性能，构建速度快，可靠性高。</p></div></div>
-      <div class="feature f-violet reveal d5"><span class="feature-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><ellipse cx="12" cy="6.2" rx="7.3" ry="3"/><path d="M4.7 6.2v11.6c0 1.66 3.27 3 7.3 3s7.3-1.34 7.3-3V6.2"/><path d="M4.7 12c0 1.66 3.27 3 7.3 3s7.3-1.34 7.3-3"/></svg></span><div><h3 data-i18n="featureDbTitle">无需数据库</h3><p data-i18n="featureDbText">无状态设计，无需存储、无设置、无需维护。</p></div></div>
+      <section class="feature-grid" id="guide" aria-labelledby="featuresHeading">
+      <h2 id="featuresHeading" class="sr-only" data-i18n="featuresHeading">${escapeHtml(T.featuresHeading)}</h2>
+      <div class="feature reveal d4"><span class="feature-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2.6 19.6 5.4v5.5c0 4.6-3 7.9-7.6 9.5-4.6-1.6-7.6-4.9-7.6-9.5V5.4Z"/><circle cx="12" cy="11.1" r="4.3"/><path d="M12 8.7v2.4h2.2"/></svg></span><div><h3 data-i18n="featureTotpTitle">${escapeHtml(T.featureTotpTitle)}</h3><p data-i18n="featureTotpText">${escapeHtml(T.featureTotpText)}</p></div></div>
+      <div class="feature f-teal reveal d4"><span class="feature-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="m8.4 8.2-4.2 3.8 4.2 3.8"/><path d="m15.6 8.2 4.2 3.8-4.2 3.8"/><path d="M13.5 6.4 10.5 17.6"/></svg></span><div><h3 data-i18n="featureApiTitle">${escapeHtml(T.featureApiTitle)}</h3><p data-i18n="featureApiText">${escapeHtml(T.featureApiText)}</p></div></div>
+      <div class="feature f-orange reveal d5"><span class="feature-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M6.3 13.5A6.2 6.2 0 1 1 15.1 6.1h1.5a3.95 3.95 0 0 1 .45 7.87"/><path d="m12.35 10.6-2.65 4.5h3.5l-2.6 4.5"/></svg></span><div><h3 data-i18n="featureCfTitle">${escapeHtml(T.featureCfTitle)}</h3><p data-i18n="featureCfText">${escapeHtml(T.featureCfText)}</p></div></div>
+      <div class="feature f-violet reveal d5"><span class="feature-icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><ellipse cx="12" cy="6.2" rx="7.3" ry="3"/><path d="M4.7 6.2v11.6c0 1.66 3.27 3 7.3 3s7.3-1.34 7.3-3V6.2"/><path d="M4.7 12c0 1.66 3.27 3 7.3 3s7.3-1.34 7.3-3"/></svg></span><div><h3 data-i18n="featureDbTitle">${escapeHtml(T.featureDbTitle)}</h3><p data-i18n="featureDbText">${escapeHtml(T.featureDbText)}</p></div></div>
       </section>
     </section>
 
     <section id="security" class="warning">
       <span class="warning-mark" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M10.62 4.15c.61-1.05 2.15-1.05 2.76 0l7.83 13.5c.62 1.06-.15 2.4-1.38 2.4H4.17c-1.23 0-2-1.34-1.38-2.4Z"/><path d="M12 9.8v4.6"/><path d="M12 17.5v.2"/></svg></span>
-      <div><strong data-i18n="warningTitle">仅用于测试和自动化用途</strong><span data-i18n="warningText">请勿公开泄露生产环境的密钥。您需要对密钥的安全性负责。</span></div>
+      <div><strong data-i18n="warningTitle">${escapeHtml(T.warningTitle)}</strong><span data-i18n="warningText">${escapeHtml(T.warningText)}</span></div>
     </section>
 
-    <footer class="footer">
-      <div class="footer-copy" data-i18n-html="footerCopy"><span class="footer-line">© ${COPYRIGHT_YEAR} 2FA Worker</span><span class="footer-line">基于 <a href="https://developers.cloudflare.com/workers/" rel="noreferrer">Cloudflare Workers</a> 构建</span><span class="footer-line">Web Crypto</span></div>
-      <div class="footer-links"><a href="${GITHUB_REPOSITORY_URL}" target="_blank" rel="noopener noreferrer" data-i18n="github">GitHub</a></div>
-    </footer>
   </main>
+  <div id="toast" class="toast" aria-hidden="true"></div>
+  <footer class="shell">
+    <div class="footer">
+      <div class="footer-copy" data-i18n-html="footerCopy">${T.footerCopy.replace("{year}", String(COPYRIGHT_YEAR))}</div>
+      <div class="footer-links"><a href="${GITHUB_REPOSITORY_URL}" target="_blank" rel="noopener noreferrer" data-i18n="github">${escapeHtml(T.github)}</a></div>
+    </div>
+  </footer>
 </div>
-<script nonce="__NONCE__">${CLIENT_JS}</script>
+<script>${CLIENT_JS}</script>
 </body>
 </html>`;
-const PAGE_HTML_SEGMENTS = PAGE_HTML.split("__NONCE__");
+}
 
-export function homeHtml(scriptNonce: string): string {
-  return PAGE_HTML_SEGMENTS.join(scriptNonce);
+const PAGE_HTML: Record<Lang, string> = { zh: renderPage("zh"), en: renderPage("en") };
+
+export function homeHtml(lang: Lang = "zh"): string {
+  return PAGE_HTML[lang];
 }

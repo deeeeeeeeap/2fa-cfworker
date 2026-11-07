@@ -2,8 +2,11 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "2fa-cfworker",
   "main": "src/index.ts",
-  "compatibility_date": "2026-06-08",
+  "compatibility_date": "2026-11-01",
   "workers_dev": true,
+  // Version URLs are public per uploaded version and bypass zone WAF rules;
+  // this Worker never uses them.
+  "preview_urls": false,
   "logpush": false,
 
   // Best-effort per-IP rate limiting for /api/totp and /tok/* (per colo).
@@ -36,8 +39,10 @@
     }
   }
 
-  // Production custom domain example:
+  // Production custom domain example (WAF rules only protect your own zone,
+  // so turn off both workers.dev and Version URLs):
   // "workers_dev": false,
+  // "preview_urls": false,  // disabling workers.dev does NOT disable Version URLs
   // "routes": [
   //   { "pattern": "2fa.example.com", "custom_domain": true }
   // ]

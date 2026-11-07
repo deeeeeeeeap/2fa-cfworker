@@ -79,6 +79,14 @@ describe("privacy and deployment configuration", () => {
     expect(config.observability.traces.persist).toBe(false);
   });
 
+  it("keeps public Version URLs off so zone WAF rules cannot be bypassed", () => {
+    expect(readWranglerConfig().preview_urls).toBe(false);
+  });
+
+  it("does not forward requests to Tail Workers", () => {
+    expect(readWranglerConfig().tail_consumers ?? []).toEqual([]);
+  });
+
   it("declares the TOTP rate limiter binding", () => {
     const config = readWranglerConfig();
     const [limiter] = config.ratelimits;
@@ -113,6 +121,14 @@ describe("privacy and deployment configuration", () => {
 
     expect(pkg).toContain("npm run security");
     expect(pkg).toContain("npm run size");
+  });
+
+  it("runs local dev with Wrangler local observability disabled", () => {
+    const pkg = JSON.parse(readText("package.json"));
+
+    expect(pkg.scripts.dev).toBe("node scripts/dev.mjs");
+    expect(pkg.scripts["dev:remote"]).toBe("node scripts/dev.mjs --remote");
+    expect(readText("scripts/dev.mjs")).toContain('X_LOCAL_OBSERVABILITY: process.env.X_LOCAL_OBSERVABILITY ?? "false"');
   });
 
   it("documents POST automation and log privacy in the README", () => {

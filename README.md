@@ -9,7 +9,7 @@
 [![CI](https://github.com/deeeeeeeeap/2fa-cfworker/actions/workflows/ci.yml/badge.svg)](https://github.com/deeeeeeeeap/2fa-cfworker/actions/workflows/ci.yml)
 ![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-F38020?logo=cloudflareworkers&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
-![Node.js >= 22](https://img.shields.io/badge/Node.js-%E2%89%A5%2022-339933?logo=nodedotjs&logoColor=white)
+![Node.js >= 22.12](https://img.shields.io/badge/Node.js-%E2%89%A5%2022.12-339933?logo=nodedotjs&logoColor=white)
 ![Runtime dependencies](https://img.shields.io/badge/runtime%20deps-0-8A2BE2)
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/deeeeeeeeap/2fa-cfworker)
@@ -29,7 +29,7 @@
 - **浏览器本地生成** — 首页 UI 内置完整 TOTP 实现（Web Crypto），密钥可以不发送到服务器；也提供 `POST /api/totp` JSON API 用于自动化。
 - **标准完备** — RFC 6238 / RFC 4226，支持 `SHA1` / `SHA256` / `SHA512`，6–8 位验证码，周期与 `t0` 可调。
 - **兼容完善** —  `/tok/<secret>` 接口开箱即用。
-- **隐私优先** — 默认关闭 persisted observability、invocation logs 与 Logpush；HTML/API 全部 `no-store`；静态检查拦截任何可能记录 secret 的代码。
+- **隐私优先** — 默认关闭 persisted observability、invocation logs 与 Logpush；API 与 token 响应全部 `no-store`；页面用按 SHA-256 哈希放行内联脚本的 CSP，可通过 ETag 返回 304，离开页面时清空密钥；静态检查禁止源码引用 `console`，也禁止配置会转发请求 URL 的 Tail Worker。
 - **安全纵深** — CSP（script + style 双 nonce）、HSTS、每 IP 限流（20 次 / 10 秒，可调）、流式 body 限长、安全响应头全家桶。
 - **质感 UI** — 「时间仪器」风格界面：深浅双主题、SVG 轨道时钟、逐位验证码单元格、平滑倒计时环、中英双语、本机时钟漂移检测；除 favicon 外全部资产为内联 SVG。
 - **工程化兜底** — RFC 测试向量双实现交叉验证、客户端/服务端算法漂移测试、TypeScript 检查、gzip 体积预算、GitHub Actions CI。
@@ -46,7 +46,7 @@
 
 ### 本地运行
 
-要求 Node.js >= 22。
+要求 Node.js >= 22.12。
 
 ```bash
 npm ci
@@ -64,15 +64,17 @@ npm run check
 
 | Method | Path | 说明 |
 | --- | --- | --- |
-| `GET` | `/` | 浏览器 TOTP UI（本地生成，密钥不出浏览器） |
+| `GET` | `/` | 浏览器 TOTP UI（本地生成，密钥不出浏览器；按 `Accept-Language` 直接返回中文或英文页面） |
 | `POST` | `/api/totp` | **推荐**的 JSON API，适合自动化集成 |
 | `GET` | `/api/totp?secret=<BASE32>` | 同上的 GET 形式；URL 携带 secret，仅建议临时使用 |
 | `GET` | `/tok/<BASE32_SECRET>` | 兼容 `2fa.live` 风格，返回 `{"token":"123456"}` |
-| `GET` | `/healthz` | 健康检查，返回 `{"ok":true}` |
+| `GET` | `/healthz` | 健康检查，返回 `{"ok":true,"now":<毫秒时间戳>}`；页面据此检测本机时钟偏差 |
 | `GET` | `/robots.txt` | 禁止爬虫索引 |
 | `GET` | `/favicon.ico` 等 | favicon 图片路由（可缓存） |
 
-所有 `GET` 路由同时支持 `HEAD`。
+所有 `GET` 路由同时支持 `HEAD`；`OPTIONS` 返回 204 和 `Allow` 头。
+
+与 `2fa.live` 的差异：本项目会忽略 secret 中的空格、连字符与末尾 `=`，非法字符返回 400；`2fa.live` 不做这些清洗，对这类输入会返回错误的验证码。规范的 Base32 输入下两者结果一致。
 
 ### POST /api/totp
 
@@ -119,12 +121,12 @@ npm run deploy
 {
   "name": "2fa-cfworker",          // 须与 Dashboard 中的 Worker 名称一致
   "main": "src/index.ts",
-  "compatibility_date": "2026-06-08",
+  "compatibility_date": "2026-11-01",
   "workers_dev": true
 }
 ```
 
-> 如果 Dashboard 中已有同名 Worker，`name` 必须与之一致，否则 Workers Builds 可能部署到非预期 Worker。
+> `name` 须与 Dashboard 中的 Worker 名称一致；不一致时 Workers Builds 会给出构建告警或失败，并由 Cloudflare 机器人开 PR 建议修改。
 
 ### 通过 GitHub + Cloudflare Workers Builds
 
@@ -134,9 +136,10 @@ npm run deploy
 | --- | --- |
 | Production branch | `main` |
 | Root directory | 留空（仓库根目录） |
-| Node version | `22` |
-| Build command | `npm ci && npm run check` |
+| Build command | `npm run check`（Workers Builds 会先自动安装依赖） |
 | Deploy command | `npm run deploy` |
+
+Node 版本由仓库根目录的 `.node-version` 决定，npm 版本由 `package.json` 的 `packageManager` 字段固定。
 
 操作路径：Cloudflare Dashboard → Workers & Pages → Create application → Import a repository。
 
@@ -145,11 +148,14 @@ npm run deploy
 ```jsonc
 {
   "workers_dev": false,
+  "preview_urls": false,
   "routes": [
     { "pattern": "2fa.example.com", "custom_domain": true }
   ]
 }
 ```
+
+WAF 与 Rate Limiting 规则只保护你自己的域名：只要 `*.workers.dev` 或任何 Version URL 仍可访问，就能绕过它们。关闭 workers.dev 并不会关闭 Version URL，所以两项都要设为 `false`。
 
 不要把真实域名、token、cookie 或私钥写进仓库。
 
@@ -217,7 +223,7 @@ curl -i -X POST "http://127.0.0.1:8787/api/totp" \
 
 | 问题 | 处理方式 |
 | --- | --- |
-| Node 版本错误 | 使用 Node.js 22+；Workers Builds 里显式设置 Node version 为 `22`。 |
+| Node 版本错误 | 使用 Node.js 22.12+；Workers Builds 读取仓库根目录的 `.node-version`。 |
 | `npm ci` 提示 lockfile 不一致 | 本地 `npm install` 更新 `package-lock.json`，`npm run check` 通过后再提交。 |
 | Wrangler 未登录 | 本地部署前 `npx wrangler login`；CI 使用平台授权，不要把 token 写进仓库。 |
 | 部署到错误 Worker | 检查 `wrangler.jsonc` 的 `name` 与 Dashboard 目标 Worker 名称是否一致。 |
@@ -248,6 +254,7 @@ curl -i -X POST "http://127.0.0.1:8787/api/totp" \
 npm ci                 # 安装依赖
 npm run dev            # 本地开发（wrangler dev）
 npm run check          # 全量检查：typecheck + 测试 + 向量 + 安全 + 体积
+npm run test:e2e       # 浏览器冒烟测试（Playwright，自动启动本地 dev server）
 npm run test           # 仅测试
 npm run deploy:dry-run # 构建检查（不部署）
 npm run deploy         # 部署

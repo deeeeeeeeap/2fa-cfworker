@@ -176,11 +176,10 @@ describe("client/server copy drift", () => {
     expect(Object.keys(i18n.zh).length).toBeGreaterThan(10);
     expect(Object.keys(i18n.en).sort()).toEqual(Object.keys(i18n.zh).sort());
 
-    const html = homeHtml("testnonce");
+    const html = homeHtml();
     let compared = 0;
-    for (const match of html.matchAll(/data-i18n="([a-zA-Z]+)"[^>]*>([^<]*)</g)) {
-      const key = match[1];
-      const renderedDefault = match[2].trim();
+    for (const [, key = "", rendered = ""] of html.matchAll(/data-i18n="([a-zA-Z]+)"[^>]*>([^<]*)</g)) {
+      const renderedDefault = rendered.trim();
       const zhValue = i18n.zh[key];
       if (typeof zhValue === "string" && !zhValue.includes("<")) {
         expect(renderedDefault, `data-i18n="${key}"`).toBe(zhValue.trim());
@@ -192,17 +191,19 @@ describe("client/server copy drift", () => {
 
   it("keeps input placeholders in sync with the zh i18n strings", () => {
     const i18n = extractI18nTable();
-    const html = homeHtml("testnonce");
+    const html = homeHtml();
 
     let compared = 0;
     for (const [tag] of html.matchAll(/<input[^>]*>/g)) {
       const placeholderMatch = tag.match(/ placeholder="([^"]*)"/);
       const keyMatch = tag.match(/ data-i18n-placeholder="([a-zA-Z]+)"/);
+      const [, placeholder = ""] = placeholderMatch ?? [];
+      const [, key = ""] = keyMatch ?? [];
       if (!placeholderMatch || !keyMatch) continue;
 
-      const zhValue = i18n.zh[keyMatch[1]];
-      expect(typeof zhValue, keyMatch[1]).toBe("string");
-      expect(placeholderMatch[1].trim(), `data-i18n-placeholder="${keyMatch[1]}"`).toBe(zhValue.trim());
+      const zhValue = i18n.zh[key];
+      expect(typeof zhValue, key).toBe("string");
+      expect(placeholder.trim(), `data-i18n-placeholder="${key}"`).toBe(String(zhValue).trim());
       compared += 1;
     }
     expect(compared).toBeGreaterThanOrEqual(2);

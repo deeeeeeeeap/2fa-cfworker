@@ -1,27 +1,40 @@
 {
-  "name": "cloudflare-worker-totp-generator",
+  "name": "2fa-cfworker",
   "version": "1.0.0",
   "private": true,
+  "description": "Stateless TOTP generator on Cloudflare Workers: a browser-local UI and a JSON API in one Worker.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deeeeeeeeap/2fa-cfworker.git"
+  },
   "type": "module",
+  "packageManager": "npm@11.19.1",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "wrangler dev",
-    "dev:remote": "wrangler dev --remote",
+    "dev": "node scripts/dev.mjs",
+    "dev:remote": "node scripts/dev.mjs --remote",
     "deploy": "wrangler deploy",
     "deploy:dry-run": "wrangler deploy --dry-run",
     "cf-typegen": "wrangler types",
     "security": "node scripts/security-guard.mjs",
     "size": "node scripts/size-budget-check.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "wrangler types --check && tsc --noEmit",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "check": "npm run typecheck && npm run test && node scripts/check-vectors.mjs && npm run security && npm run size"
   },
+  "allowScripts": {
+    "esbuild": true,
+    "workerd": true,
+    "fsevents": false
+  },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.16.14",
-    "typescript": "6.0.3",
-    "vitest": "4.1.8",
-    "wrangler": "4.98.0"
+    "@cloudflare/vitest-plugin": "1.6.0",
+    "@playwright/test": "1.65.0",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0",
+    "wrangler": "4.158.0"
   }
 }

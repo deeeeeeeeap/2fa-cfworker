@@ -10,26 +10,70 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  WRANGLER_SEND_METRICS: "false"
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    name: check (Node ${{ matrix.node }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # 22 = engines floor (maintenance until 2027-04-30), 24 = maintenance LTS
+        # used by Workers Builds by default, 26 = active LTS.
+        node: [22, 24, 26]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "22"
+          node-version: ${{ matrix.node }}
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify registry signatures and provenance
+        if: matrix.node == 24
+        run: npm audit signatures
+
+      # Includes `wrangler types --check`, so a stale worker-configuration.d.ts fails here.
       - name: Typecheck, tests, vectors, security guard, size budget
         run: npm run check
         env:
           # Run worker tests inside the real workerd runtime (see vitest.config.ts).
           VITEST_WORKERS_POOL: "1"
+
+  e2e:
+    name: browser smoke test
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright smoke test
+        run: npm run test:e2e

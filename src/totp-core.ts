@@ -76,16 +76,10 @@ export function normalizeBase32(input: unknown): string {
     throw new TotpError("secret must be a Base32 string");
   }
 
-  let secret = input.trim();
-  if (secret.includes("%")) {
-    try {
-      secret = decodeURIComponent(secret);
-    } catch {
-      throw new TotpError("secret contains invalid percent-encoding");
-    }
-  }
-
-  secret = secret.replace(/[\s-]/g, "").replace(/=+$/g, "").toUpperCase();
+  // Percent-decoding is a transport concern (only the /tok/ path needs it);
+  // validating ASCII before upper-casing keeps "ß"/"ı"/"ſ"/ligatures from
+  // being case-mapped into valid Base32 letters.
+  const secret = input.replace(/[\s-]/g, "").replace(/=+$/g, "");
 
   if (secret.length === 0) {
     throw new TotpError("secret is required");
@@ -93,11 +87,11 @@ export function normalizeBase32(input: unknown): string {
   if (secret.length > MAX_SECRET_LENGTH) {
     throw new TotpError("secret is too long", "too_long");
   }
-  if (!/^[A-Z2-7]+$/.test(secret)) {
+  if (!/^[A-Za-z2-7]+$/.test(secret)) {
     throw new TotpError("secret must use RFC 4648 Base32 characters A-Z and 2-7");
   }
 
-  return secret;
+  return secret.toUpperCase();
 }
 
 export function base32ToBytes(input: string): ByteArray {
@@ -128,9 +122,27 @@ export function base32ToBytes(input: string): ByteArray {
   return new Uint8Array(out);
 }
 
+const UNSIGNED_INTEGER = /^\d+$/;
+const UNSIGNED_DECIMAL = /^\d+(?:\.\d+)?$/;
+
+function isMissing(value: unknown): boolean {
+  return value === undefined || value === null || value === "";
+}
+
+// JSON numbers pass through; strings must be plain decimal digits. Hex/binary/
+// octal/exponent forms, surrounding whitespace, booleans and arrays are
+// rejected instead of being coerced by Number().
+function toStrictNumber(value: unknown, allowFraction: boolean): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && (allowFraction ? UNSIGNED_DECIMAL : UNSIGNED_INTEGER).test(value)) {
+    return Number(value);
+  }
+  return Number.NaN;
+}
+
 function parseInteger(value: unknown, fallback: number, min: number, max: number, name: string): number {
-  if (value === undefined || value === null || value === "") return fallback;
-  const numberValue = typeof value === "number" ? value : Number(value);
+  if (isMissing(value)) return fallback;
+  const numberValue = toStrictNumber(value, false);
   if (!Number.isInteger(numberValue) || numberValue < min || numberValue > max) {
     throw new TotpError(`${name} must be an integer between ${min} and ${max}`);
   }
@@ -138,12 +150,10 @@ function parseInteger(value: unknown, fallback: number, min: number, max: number
 }
 
 function parseAlgorithm(value: unknown): TotpAlgorithm {
-  if (value === undefined || value === null || value === "") return DEFAULT_ALGORITHM;
-  const normalized = String(value).replace(/-/g, "").toUpperCase();
-  if (normalized === "SHA1" || normalized === "SHA256" || normalized === "SHA512") {
-    return normalized as TotpAlgorithm;
-  }
-  throw new TotpError("algorithm must be SHA1, SHA256, or SHA512");
+  if (isMissing(value)) return DEFAULT_ALGORITHM;
+  const match = typeof value === "string" ? /^sha-?(1|256|512)$/i.exec(value) : null;
+  if (!match) throw new TotpError("algorithm must be SHA1, SHA256, or SHA512");
+  return `SHA${match[1]}` as TotpAlgorithm;
 }
 
 export function normalizeTotpOptions(data: RawTotpOptions = {}): Required<TotpOptions> {
@@ -153,14 +163,14 @@ export function normalizeTotpOptions(data: RawTotpOptions = {}): Required<TotpOp
   const algorithm = parseAlgorithm(data.algorithm);
 
   let timestampMs = Date.now();
-  if (data.timestampMs !== undefined && data.timestampMs !== null && data.timestampMs !== "") {
-    const milliseconds = Number(data.timestampMs);
+  if (!isMissing(data.timestampMs)) {
+    const milliseconds = toStrictNumber(data.timestampMs, true);
     if (!Number.isFinite(milliseconds) || milliseconds < 0 || milliseconds > MAX_UNIX_SECONDS * 1000) {
       throw new TotpError("timestampMs must be a Unix timestamp in milliseconds");
     }
     timestampMs = Math.floor(milliseconds);
-  } else if (data.time !== undefined && data.time !== null && data.time !== "") {
-    const seconds = Number(data.time);
+  } else if (!isMissing(data.time)) {
+    const seconds = toStrictNumber(data.time, true);
     if (!Number.isFinite(seconds) || seconds < 0 || seconds > MAX_UNIX_SECONDS) {
       throw new TotpError("time must be a Unix timestamp in seconds");
     }
@@ -192,13 +202,11 @@ export async function hotp(key: ByteArray, counter: bigint, digits: number, algo
     ["sign"],
   );
 
-  const signature = new Uint8Array(await crypto.subtle.sign("HMAC", cryptoKey, counterToBytes(counter)));
-  const offset = signature[signature.length - 1] & 0x0f;
-  const binary =
-    ((signature[offset] & 0x7f) * 2 ** 24) +
-    ((signature[offset + 1] & 0xff) << 16) +
-    ((signature[offset + 2] & 0xff) << 8) +
-    (signature[offset + 3] & 0xff);
+  const signature = new DataView(await crypto.subtle.sign("HMAC", cryptoKey, counterToBytes(counter)));
+  // RFC 4226 dynamic truncation: the low nibble of the last byte picks a
+  // big-endian 31-bit window.
+  const offset = signature.getUint8(signature.byteLength - 1) & 0x0f;
+  const binary = signature.getUint32(offset) & 0x7fffffff;
 
   const modulo = 10 ** digits;
   return String(binary % modulo).padStart(digits, "0");

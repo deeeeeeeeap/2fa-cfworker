@@ -4,8 +4,40 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    # Fresh releases are the window in which compromised packages get caught.
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    groups:
+      # @cloudflare/vitest-plugin pins an exact wrangler/miniflare and peers on
+      # vitest, so these must move together to keep one workerd install.
+      workers-toolchain:
+        patterns:
+          - "wrangler"
+          - "@cloudflare/*"
+          - "vitest"
+          - "@vitest/*"
+          - "vite"
+          - "esbuild"
+        update-types: ["minor", "patch"]
+      dev-dependencies:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+    labels: ["dependencies"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 3
+    groups:
+      github-actions:
+        patterns: ["*"]
+    labels: ["dependencies"]

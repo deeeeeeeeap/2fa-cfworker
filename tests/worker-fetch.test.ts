@@ -17,32 +17,40 @@ async function json(path: string, init?: RequestInit, env?: TestEnv): Promise<{ 
 }
 
 describe("Worker routes", () => {
-  it("serves the local-browser UI with uncached nonce HTML and CSP", async () => {
+  it("serves the local-browser UI as revalidatable HTML with a hash-based CSP", async () => {
     const response = await worker.fetch(request("/"));
     const body = await response.text();
     const csp = response.headers.get("content-security-policy") ?? "";
-    const nonce = csp.match(/script-src 'self' 'nonce-([^']+)'/)?.[1];
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/html");
-    expect(response.headers.get("cache-control")).toContain("no-store");
-    expect(response.headers.get("pragma")).toBe("no-cache");
+    expect(response.headers.get("cache-control")).toBe("no-cache");
+    expect(response.headers.get("pragma")).toBeNull();
+    expect(response.headers.get("etag")).toMatch(/^"[A-Za-z0-9+/]{27}"$/);
     expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     expect(response.headers.get("strict-transport-security")).toBe("max-age=31536000");
 
-    expect(csp).toContain("default-src 'self'");
+    expect(csp).toContain("default-src 'none'");
     expect(csp).toContain("img-src 'self'");
     expect(csp).not.toContain("data:");
     expect(csp).toContain("connect-src 'self'");
-    expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("base-uri 'none'");
     expect(csp).toContain("frame-ancestors 'none'");
-    expect(csp).toContain("form-action 'self'");
+    expect(csp).toContain("form-action 'none'");
     expect(csp).not.toContain("'unsafe-inline'");
-    expect(nonce).toBeTruthy();
-    expect(csp).toContain(`style-src 'self' 'nonce-${nonce}'`);
-    expect(body).toContain(`<script nonce="${nonce}">`);
-    expect(body).toContain(`<style nonce="${nonce}">`);
+    expect(csp).not.toContain("nonce-");
+    expect(body).not.toContain("nonce=");
+
+    // Every inline block is allow-listed by the SHA-256 hash of its exact text.
+    for (const [tag, directive] of [["script", "script-src"], ["style", "style-src"]] as const) {
+      const blocks = [...body.matchAll(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`, "g"))].map(([, content = ""]) => content);
+      const sources = csp.split(";").find((part) => part.trim().startsWith(directive)) ?? "";
+      expect(blocks.length, tag).toBeGreaterThan(0);
+      for (const content of blocks) {
+        const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(content)));
+        expect(sources, tag).toContain(`'sha256-${btoa(String.fromCharCode(...digest))}'`);
+      }
+    }
 
     expect(body).toContain("即时生成 TOTP 验证码");
     expect(body).toContain("JSON API");
@@ -60,7 +68,7 @@ describe("Worker routes", () => {
     expect(body).toContain("id=\"driftWarn\" class=\"drift-warn\" role=\"status\" hidden");
     expect(body).toContain(`© ${new Date().getFullYear()} 2FA Worker`);
     expect(body).toContain("id=\"secret-help\" class=\"field-hint\"");
-    expect(body).toContain("id=\"secret-error\" class=\"field-error\" role=\"alert\" aria-live=\"assertive\"");
+    expect(body).toContain("id=\"secret-error\" class=\"field-error\" aria-live=\"polite\"");
     expect(body).toContain("id=\"endpoint\" readonly value=\"\"");
     expect(body).toContain("<details id=\"advanced\" class=\"advanced\">");
     expect(body).toContain("<select id=\"algorithm\">");
@@ -102,7 +110,52 @@ describe("Worker routes", () => {
     expect(body).toContain("@media (prefers-reduced-motion: reduce)");
   });
 
-  it("serves favicons as immutable PNG routes", async () => {
+  it("answers a matching If-None-Match with an empty 304", async () => {
+    const first = await worker.fetch(request("/"));
+    const etag = first.headers.get("etag") ?? "";
+
+    for (const value of [etag, `W/${etag}`, `"stale", ${etag}`, "*"]) {
+      const revalidated = await worker.fetch(request("/", { headers: { "if-none-match": value } }));
+      expect(revalidated.status, value).toBe(304);
+      expect(await revalidated.text(), value).toBe("");
+      expect(revalidated.headers.get("etag"), value).toBe(etag);
+      expect(revalidated.headers.get("content-security-policy"), value).toBe(first.headers.get("content-security-policy"));
+    }
+
+    const stale = await worker.fetch(request("/", { headers: { "if-none-match": '"stale"' } }));
+    expect(stale.status).toBe(200);
+  });
+
+  it("renders the page in the visitor's language from Accept-Language", async () => {
+    const zh = await worker.fetch(request("/"));
+    const en = await worker.fetch(request("/", { headers: { "accept-language": "en-US,en;q=0.9,zh;q=0.8" } }));
+    const enBody = await en.text();
+
+    expect(zh.headers.get("content-language")).toBe("zh-CN");
+    expect(zh.headers.get("vary")).toBe("Accept-Language");
+    expect(en.headers.get("content-language")).toBe("en");
+    expect(en.headers.get("vary")).toBe("Accept-Language");
+    expect(en.headers.get("etag")).not.toBe(zh.headers.get("etag"));
+    expect(en.headers.get("content-security-policy")).toBe(zh.headers.get("content-security-policy"));
+    expect(enBody).toContain('<html lang="en"');
+    expect(enBody).toContain("<title>2FA Worker - Generate TOTP codes</title>");
+    expect(enBody).toContain('<span data-i18n="secretLabel">TOTP secret</span>');
+    expect(enBody).toContain('placeholder="Paste a Base32 TOTP secret, or open /#/tok/YOUR_SECRET to fill it"');
+    expect(enBody).toContain("New code in <b>--</b> s");
+
+    const cases = [
+      ["ja,en;q=0.5", "en"],
+      ["zh-TW", "zh-CN"],
+      ["", "zh-CN"],
+      ["en;q=0, zh;q=0.1", "zh-CN"],
+    ] as const;
+    for (const [header, contentLanguage] of cases) {
+      const response = await worker.fetch(request("/", { headers: header ? { "accept-language": header } : {} }));
+      expect(response.headers.get("content-language"), header).toBe(contentLanguage);
+    }
+  });
+
+  it("serves favicons as cacheable PNG routes", async () => {
     const paths = ["/favicon.ico", "/favicon.png", "/apple-touch-icon.png"];
 
     for (const path of paths) {
@@ -111,8 +164,8 @@ describe("Worker routes", () => {
 
       expect(response.status, path).toBe(200);
       expect(response.headers.get("content-type"), path).toContain("image/png");
-      expect(response.headers.get("cache-control"), path).toContain("public");
-      expect(response.headers.get("cache-control"), path).toContain("immutable");
+      // Unversioned URLs: cacheable for a day, but not immutable.
+      expect(response.headers.get("cache-control"), path).toBe("public, max-age=86400");
       expect(response.headers.get("strict-transport-security"), path).toBe("max-age=31536000");
       expect(bytes.length, path).toBeGreaterThan(1000);
       expect(Array.from(bytes.slice(0, 8)), path).toEqual(PNG_MAGIC_BYTES);
@@ -123,7 +176,8 @@ describe("Worker routes", () => {
     const health = await json("/healthz");
     expect(health.response.status).toBe(200);
     expect(health.response.headers.get("strict-transport-security")).toBe("max-age=31536000");
-    expect(health.body).toEqual({ ok: true });
+    expect(health.body).toEqual({ ok: true, now: expect.any(Number) });
+    expect(Math.abs(health.body.now - Date.now())).toBeLessThan(5000);
 
     const robots = await worker.fetch(request("/robots.txt"));
     expect(robots.status).toBe(200);
@@ -385,7 +439,7 @@ describe("Worker routes", () => {
     );
     await worker.fetch(request(`/tok/${RFC_SHA1_SECRET_BASE32}?time=59`), env);
 
-    expect(seenKeys).toEqual(["203.0.113.9", "unknown"]);
+    expect(seenKeys).toEqual(["ip4:203.0.113.9", "ip:unknown"]);
   });
 
   it("serves tokens when the rate limiter allows requests or fails open", async () => {

@@ -5,8 +5,9 @@ node_modules/
 dist/
 bundled/
 coverage/
+test-results/
+playwright-report/
 *.log
 .env*
 .dev.vars*
-worker-configuration.d.ts
 design-qa.md

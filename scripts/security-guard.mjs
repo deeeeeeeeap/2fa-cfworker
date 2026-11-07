@@ -3,18 +3,17 @@ import { join } from "node:path";
 
 const srcDir = "src";
 const files = readdirSync(srcDir, { recursive: true })
-  .filter((entry) => entry.endsWith(".ts"))
+  .filter((entry) => /\.(ts|js|mjs|css)$/.test(entry))
   .map((entry) => join(srcDir, entry))
   .sort();
 
+// Any reference to the identifier is banned, not just console.log(...):
+// console.trace, console["log"], destructured methods and globalThis.console
+// all slipped past a call-pattern check.
 const bannedPatterns = [
   {
-    pattern: /\bconsole\.(log|info|warn|error|debug)\s*\(/,
-    reason: "Worker source must not add console logging that may capture URL secrets.",
-  },
-  {
-    pattern: /\bconsole\.(log|info|warn|error|debug)[\s\S]{0,160}\b(request\.url|url\.href|searchParams|secret|token|body)\b/i,
-    reason: "Never log request URLs, query strings, request bodies, secrets, or generated tokens.",
+    pattern: /\bconsole\b/,
+    reason: "Worker and client source must not reference console at all; logs can capture URL secrets.",
   },
 ];
 
@@ -30,8 +29,15 @@ for (const file of files) {
   }
 }
 
+// A Tail Worker receives every request URL, including /tok/<secret>.
+const wranglerConfig = readFileSync("wrangler.jsonc", "utf8");
+if (/"tail_consumers"\s*:/.test(wranglerConfig)) {
+  console.error("Security guard failed in wrangler.jsonc: tail_consumers would forward request URLs (and URL secrets).");
+  failed = true;
+}
+
 if (failed) {
   process.exit(1);
 }
 
-console.log("Security guard passed: no secret-bearing logging patterns found.");
+console.log("Security guard passed: no logging references or URL-forwarding consumers found.");
