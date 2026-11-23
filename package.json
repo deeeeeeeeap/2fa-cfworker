@@ -31,8 +31,8 @@
     "fsevents": false
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "1.6.0",
-    "@playwright/test": "1.65.0",
+    "@cloudflare/vitest-plugin": "1.8.2",
+    "@playwright/test": "1.65.1",
     "typescript": "7.0.2",
     "vitest": "5.1.0",
     "wrangler": "4.158.0"
