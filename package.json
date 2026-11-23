@@ -35,6 +35,6 @@
     "@playwright/test": "1.65.0",
     "typescript": "7.0.2",
     "vitest": "5.1.0",
-    "wrangler": "4.158.0"
+    "wrangler": "4.162.0"
   }
 }
